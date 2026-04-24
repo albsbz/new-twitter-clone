@@ -1,6 +1,6 @@
 abstract class BaseService<T> {
   abstract findAll(): Promise<T[]>;
-  abstract findById(id: string): Promise<T | null>;
+  abstract findById(id: number): Promise<T | null>;
 }
 
 export default BaseService;

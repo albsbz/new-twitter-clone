@@ -4,4 +4,4 @@ import PostService from "./PostService";
 const postService = new PostService();
 const postController = new PostController({ postService });
 
-export default { postController, postService };
+export default postController;
