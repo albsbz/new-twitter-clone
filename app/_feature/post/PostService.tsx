@@ -1,10 +1,11 @@
 import BaseService from "@/app/_common/BaseService";
-import { PostEntity } from "./PostEntity.interface";
-import PostResponseDto from "./PostResponseDto.type";
+import { PostEntity } from "./types/PostEntity.interface";
+import PostResponseDto from "./types/PostResponseDto.type";
 import ApiService from "../api/ApiService";
+import AllPostsResponseDto from "./types/AllPostsResponseDto.type";
 
-class PostService extends BaseService<PostResponseDto> {
-  async findAll(): Promise<PostResponseDto[]> {
+class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
+  async findAll(): Promise<AllPostsResponseDto> {
     const res = await ApiService.get("/posts");
     return res;
   }
