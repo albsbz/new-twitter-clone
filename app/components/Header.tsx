@@ -1,28 +1,31 @@
-'use client';
+"use client";
 import { Bars3Icon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 import { useState } from "react";
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <header className="flex items-center justify-between p-4 bg-gray-800 text-white">
-      <h1 className="text-xl font-bold flex-grow-2">Let's tweet</h1>
+      <Link href="/" className="text-xl font-bold flex-grow-2">
+        <h1>Let's tweet</h1>
+      </Link>
       <nav className="sm:flex content-end justify-between flex-grow-4 hidden">
-        <a href="/" className=" hover:underline">
+        <Link href="/" className=" hover:underline">
           Home
-        </a>
-        <a href="/" className="hover:underline">
+        </Link>
+        <Link href="/tweets" className="hover:underline">
           Explore tweets
-        </a>
-        <a href="/" className="hover:underline">
+        </Link>
+        <Link href="/post" className="hover:underline">
           Post a tweet
-        </a>
-        <a href="/" className="hover:underline">
+        </Link>
+        <Link href="/trending" className="hover:underline">
           Trending
-        </a>
-        <a href="/" className="hover:underline">
+        </Link>
+        <Link href="/profile" className="hover:underline">
           My profile
-        </a>
+        </Link>
       </nav>
       <Bars3Icon
         className="h-6 w-6 sm:hidden"
@@ -30,21 +33,21 @@ function Header() {
       />
       {isMenuOpen && (
         <nav className="sm:hidden absolute top-16 right-4 bg-gray-800 p-4 rounded shadow-lg">
-          <a href="/" className="block hover:underline">
+          <Link href="/" className="block hover:underline">
             Home
-          </a>
-          <a href="/" className="block hover:underline">
+          </Link>
+          <Link href="/tweets" className="block hover:underline">
             Explore tweets
-          </a>
-          <a href="/" className="block hover:underline">
+          </Link>
+          <Link href="/post" className="block hover:underline">
             Post a tweet
-          </a>
-          <a href="/" className="block hover:underline">
+          </Link>
+          <Link href="/trending" className="block hover:underline">
             Trending
-          </a>
-          <a href="/" className="block hover:underline">
+          </Link>
+          <Link href="/profile" className="block hover:underline">
             My profile
-          </a>
+          </Link>
         </nav>
       )}
     </header>
