@@ -8,7 +8,10 @@ function Form({
   fields,
   validateSchema,
 }: {
-  handleSubmit: React.SubmitEventHandler<HTMLFormElement>;
+  handleSubmit: (
+    e: React.SubmitEvent<HTMLFormElement>,
+    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+  ) => void;
   fields: { name: string; type: string; placeholder: string; title: string }[];
   validateSchema: { [key: string]: z.ZodTypeAny };
 }) {
@@ -26,6 +29,7 @@ function Form({
       setFormErrors(errors);
       return false;
     }
+    setFormErrors({});
     return true;
   };
   const validateAndSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -34,7 +38,21 @@ function Form({
     if (!validate(formData)) {
       return;
     }
-    handleSubmit(e);
+    handleSubmit(e, (responseErrors) => {
+      if (!responseErrors) {
+        setFormErrors({});
+        return;
+      }
+      const errors: { [key: string]: string } = {};
+
+      if (typeof responseErrors === "string") {
+        JSON.parse(responseErrors).forEach((err: any) => {
+          const fieldName = err.path[0] as string;
+          errors[fieldName] = err.message;
+        });
+        setFormErrors(errors);
+      }
+    });
   };
 
   return (

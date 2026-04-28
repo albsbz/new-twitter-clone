@@ -8,7 +8,7 @@ class PostController extends BaseController<PostEntity> {
   private postService: PostService;
 
   constructor({ postService }: { postService: PostService }) {
-    super();  
+    super();
     this.postService = postService;
   }
   async getOne(id: string) {
@@ -40,7 +40,7 @@ class PostController extends BaseController<PostEntity> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: z.flattenError(error),
+        error: JSON.stringify(error!.issues),
         status: 400,
       });
     } else {

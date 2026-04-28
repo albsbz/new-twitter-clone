@@ -7,19 +7,25 @@ import Post from "./db/post.model";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(): Promise<AllPostsResponseDto> {
-    const res = await ApiService.get("/posts");
+    const res = await ApiService.get({ endpoint: "/posts" });
     return res;
   }
 
   async findById(id: PostEntity["id"]): Promise<PostResponseDto> {
-    const res = await ApiService.get(`/posts/${id}`);
+    const res = await ApiService.get({ endpoint: `/posts/${id}` });
     return res;
   }
   async create(data: Omit<PostEntity, "id">): Promise<PostEntity> {
     await this.connect();
     const post = new Post(data);
-    const res = await post.save();
-    return res;
+    try {
+      const res = await post.save();
+      console.log("Created post:", res);
+      return res;
+    } catch (error) {
+      console.error("Failed to save post:", error);
+      throw error;
+    }
   }
 }
 

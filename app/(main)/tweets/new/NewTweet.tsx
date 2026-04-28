@@ -1,10 +1,21 @@
 "use client";
 import Form from "@/app/components/Form";
 import { PostSchema } from "@/app/_feature/post/types/CreatePostDto";
+import ApiService from "@/app/_feature/api/ApiService";
 function NewTweet() {
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
-    console.log("Form submitted", e.currentTarget);
-    // Handle form submission logic here
+  const handleSubmit = async (
+    e: React.SubmitEvent<HTMLFormElement>,
+    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+  ) => {
+    setResponseError(null);
+    const response = await ApiService.post({
+      endpoint: "post",
+      api: true,
+      formData: e.currentTarget,
+    });
+    if (response.error) {
+      setResponseError(response.error);
+    }
   };
   return (
     <div>
