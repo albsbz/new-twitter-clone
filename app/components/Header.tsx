@@ -17,7 +17,7 @@ function Header() {
         <Link href="/tweets" className="hover:underline">
           Explore tweets
         </Link>
-        <Link href="/post" className="hover:underline">
+        <Link href="/tweets/new" className="hover:underline">
           Post a tweet
         </Link>
         <Link href="/trending" className="hover:underline">

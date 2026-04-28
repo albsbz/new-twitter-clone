@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - app_network
+
+  nextjs:
+    build: .
+    container_name: nextjs_app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    environment:
+      MONGODB_URI: mongodb://root:password@mongo:27017/admin
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - app_network
+    develop:
+      watch:
+        - path: ./src
+          target: /app/src
+          action: sync
+        - path: ./package.json
+          action: rebuild
+
+volumes:
+  mongo_data:
+
+networks:
+  app_network:
+    driver: bridge

@@ -1,0 +1,9 @@
+import postController from "@/app/_feature/post";
+import Post, { CreatePostDto } from "@/app/_feature/post/types/CreatePostDto";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest, ctx: RouteContext<"/api/post">) {
+  const formData = Object.fromEntries(await req.formData()) as CreatePostDto;
+  const [responseData, status] = await postController.create(formData);
+  return NextResponse.json(responseData, status);
+}
