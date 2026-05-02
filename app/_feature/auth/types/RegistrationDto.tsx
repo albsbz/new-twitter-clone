@@ -7,7 +7,8 @@ const UserSchema = {
 const User = z.object(UserSchema);
 
 type RegistrationDto = z.infer<typeof User>;
+type LoginDto = z.infer<typeof User>;
 
 export default User;
 export { UserSchema };
-export type { RegistrationDto };
+export type { RegistrationDto, LoginDto };

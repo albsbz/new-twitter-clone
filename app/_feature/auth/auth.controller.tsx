@@ -1,7 +1,7 @@
 import BaseController from "@/app/_common/base.controller";
 import UserService from "../user/user.service";
 import User, { RegistrationDto } from "./types/RegistrationDto";
-import { genSalt, hash } from "bcryptjs";
+import bcrypt, { genSalt, hash } from "bcryptjs";
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -34,7 +34,7 @@ class AuthController extends BaseController<{}> {
         const hashedPassword = await hash(data.password, salt);
         const newUser = await this.userService.create({
           ...data,
-          password: hashedPassword, 
+          password: hashedPassword,
           isVerified: false,
         });
 
@@ -47,6 +47,53 @@ class AuthController extends BaseController<{}> {
         console.error("Error creating user:", error);
         return this.formResponse({
           message: "Failed to create user",
+          error: error instanceof Error ? error.message : "Unknown error",
+          status: 500,
+        });
+      }
+    }
+  }
+
+  async login(formData: RegistrationDto) {
+    const { success, data, error } = User.safeParse(formData);
+    console.log("Parsed data:", { success, data, error });
+    if (!success) {
+      return this.formResponse({
+        message: "Validation failed",
+        error: JSON.stringify(error!.issues),
+        status: 400,
+      });
+    } else {
+      try {
+        const existingUser = await this.userService.findByEmail(data.email);
+        if (!existingUser) {
+          return this.formResponse({
+            message: "Invalid email or password",
+            error: "Unauthorized",
+            status: 401,
+          });
+        }
+        const passwordCompare = await bcrypt.compare(
+          data.password,
+          existingUser.password,
+        );
+        if (!passwordCompare) {
+          return this.formResponse({
+            message: "Invalid email or password",
+            error: "Unauthorized",
+            status: 401,
+          });
+        }
+
+        return this.formResponse({
+          message: "Login successful",
+          data: {},
+          status: 200,
+        });
+      } catch (error) {
+        console.error("Error logging in user:", error);
+        return this.formResponse({
+          message: "Failed to login user",
           error: error instanceof Error ? error.message : "Unknown error",
           status: 500,
         });

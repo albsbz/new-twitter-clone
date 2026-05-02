@@ -7,7 +7,7 @@ import Post from "./db/post.model";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(): Promise<AllPostsResponseDto> {
-    const { data } = await ApiService.get({ endpoint: "/posts" });
+    const data = await ApiService.get({ endpoint: "/posts" });
     return data;
   }
 
