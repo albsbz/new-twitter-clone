@@ -3,39 +3,39 @@ import { UserSchema } from "@/app/_feature/auth/types/RegistrationDto";
 import Form from "@/app/components/Form";
 import { useNotificationState } from "@/app/lib/store";
 
-function LoginForm() {
+function RegistrationForm() {
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
     e: React.SubmitEvent<HTMLFormElement>,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => {
     setResponseError(null);
-    const { data, status, success } = await ApiService.post({
-      endpoint: "auth/login",
+    const { message, error, status, success } = await ApiService.post({
+      endpoint: "auth/registration",
       api: true,
       formData: e.currentTarget,
     });
 
     if (success) {
-      addNotification({ message: "Login successful!", type: "success" });
+      addNotification({ message: "Registration successful!", type: "success" });
       return;
     }
-    if (status === 401) {
-      console.log("Unauthorized error during login:", data);
-      addNotification({ message: data.message, type: "error" });
+    if (status === 409) {
+      console.log("Conflict error during registration:", message);
+      addNotification({ message, type: "error" });
       return;
     }
-    if (data.error) {
-      setResponseError(data.error);
+    if (error) {
+      setResponseError(error);
     }
   };
   return (
     <div>
-      <h2 className="flex justify-center">Login</h2>
+      <h2 className="flex justify-center">Register</h2>
       <Form
         handleSubmit={handleSubmit}
         validateSchema={UserSchema}
-		submitButtonText="Login"
+        submitButtonText="Register"
         fields={[
           {
             name: "email",
@@ -55,4 +55,4 @@ function LoginForm() {
   );
 }
 
-export default LoginForm;
+export default RegistrationForm;

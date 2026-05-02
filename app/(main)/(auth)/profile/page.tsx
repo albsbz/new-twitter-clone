@@ -1,19 +1,15 @@
 "use client";
 import { useUserState } from "@/app/lib/store";
-import RegistrationForm from "./RegistrationForm";
-import LoginForm from "./LoginForm";
+import RegistrationForm from "../../../components/RegistrationForm";
+import LoginForm from "../../../components/LoginForm";
+import Profile from "@/app/components/Ptofile";
 
 function ProfilePage() {
-  const { isAuthenticated } = useUserState();
-  if (!isAuthenticated) {
-    return (
-      <>
-        <LoginForm />
-        <RegistrationForm />
-      </>
-    );
-  }
-  return <div>Profile</div>;
+  return (
+   
+      <Profile />
+
+  );
 }
 
 export default ProfilePage;

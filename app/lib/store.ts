@@ -1,20 +1,31 @@
 import { create } from "zustand";
+import ApiService from "../_feature/api/ApiService";
 
 const initialState: {
   name: string | null;
   isAuthenticated: boolean;
-} = { name: null, isAuthenticated: false };
+  jwtToken?: string | null;
+} = { name: null, isAuthenticated: false, jwtToken: null };
 // Define types for state & actions
 type UserState = typeof initialState & {
-  logIn: (name: string) => void;
+  logIn: (params: { name: string; jwtToken: string }) => void;
   logOut: () => void;
 };
 
 // Create store using the curried form of `create`
 export const useUserState = create<UserState>()((set) => ({
   ...initialState,
-  logIn: (name: string) => set(() => ({ name, isAuthenticated: true })),
-  logOut: () => set(() => ({ name: null, isAuthenticated: false })),
+  logIn: ({ name, jwtToken }: { name: string | null; jwtToken: string }) =>
+    set(() => {
+      console.log("Logging in user:", { name, jwtToken });
+      ApiService.setAuthToken(jwtToken);
+      return { name, isAuthenticated: true, jwtToken };
+    }),
+  logOut: () =>
+    set(() => {
+      ApiService.removeAuthToken();
+      return { name: null, isAuthenticated: false, jwtToken: null };
+    }),
 }));
 
 type INotification = {

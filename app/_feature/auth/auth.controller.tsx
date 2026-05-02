@@ -2,6 +2,8 @@ import BaseController from "@/app/_common/base.controller";
 import UserService from "../user/user.service";
 import User, { RegistrationDto } from "./types/RegistrationDto";
 import bcrypt, { genSalt, hash } from "bcryptjs";
+import jwt from "jsonwebtoken";
+
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -84,10 +86,16 @@ class AuthController extends BaseController<{}> {
             status: 401,
           });
         }
-
+        const token = jwt.sign(
+          { userId: existingUser.id },
+          process.env.JWT_SECRET!,
+          {
+            expiresIn: "1h",
+          },
+        );
         return this.formResponse({
           message: "Login successful",
-          data: {},
+          data: { token },
           status: 200,
         });
       } catch (error) {

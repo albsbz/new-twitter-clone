@@ -8,13 +8,13 @@ function NewTweet() {
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => {
     setResponseError(null);
-    const { data: response } = await ApiService.post({
+    const { error } = await ApiService.post({
       endpoint: "post",
       api: true,
       formData: e.currentTarget,
     });
-    if (response.error) {
-      setResponseError(response.error);
+    if (error) {
+      setResponseError(error);
     }
   };
   return (
