@@ -1,9 +1,18 @@
 "use client";
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUserState } from "../lib/store";
+import cookieStore from "../lib/cookieStore";
 
 function Header() {
+  const { logIn } = useUserState();
+  useEffect(() => {
+    const token = cookieStore.get("token");
+    if (token) {
+      logIn({  jwtToken: token });
+    }
+  }, [logIn]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <header className="flex items-center justify-between p-4 bg-gray-800 text-white">
