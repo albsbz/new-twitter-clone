@@ -7,13 +7,13 @@ import Post from "./db/post.model";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(): Promise<AllPostsResponseDto> {
-    const res = await ApiService.get({ endpoint: "/posts" });
-    return res;
+    const { data } = await ApiService.get({ endpoint: "/posts" });
+    return data;
   }
 
   async findById(id: PostEntity["id"]): Promise<PostResponseDto> {
-    const res = await ApiService.get({ endpoint: `/posts/${id}` });
-    return res;
+    const { data } = await ApiService.get({ endpoint: `/posts/${id}` });
+    return data;
   }
   async create(data: Omit<PostEntity, "id">): Promise<PostEntity> {
     await this.connect();

@@ -55,25 +55,29 @@ class ApiService {
     api?: boolean;
     basicUrl?: string;
   }) {
-    try {
-      const url = this.constructURL({ endpoint, api, basicUrl });
-      const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
-      let init;
+    const url = this.constructURL({ endpoint, api, basicUrl });
+    const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
+    let init;
+    init = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: requestBody,
+    };
+    if (formData) {
       init = {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: requestBody,
+        body: new FormData(formData),
       };
-      if (formData) {
-        init = {
-          method: "POST",
-          body: new FormData(formData),
-        };
-      }
+    }
+    try {
       const response = await fetch(url, init);
-      return await response.json();
+      return {
+        data: await response.json(),
+        status: response.status,
+        success: response.ok,
+      };
     } catch (error) {
       console.error("API POST request failed:", error);
       throw error;

@@ -1,8 +1,8 @@
 import dbConnect from "@/app/lib/mongodb";
 
-abstract class BaseService<One, Many> {
-  abstract findAll(): Promise<Many>;
-  abstract findById(id: number): Promise<One | null>;
+abstract class BaseService<One = {}, Many = {}> {
+  abstract findAll?(): Promise<Many>;
+  abstract findById?(id: number): Promise<One | null>;
   protected async connect(): Promise<void> {
     try {
       await dbConnect();

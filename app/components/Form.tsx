@@ -6,12 +6,14 @@ import z from "zod";
 function Form({
   handleSubmit,
   fields,
+  submitButtonText = "Submit",
   validateSchema,
 }: {
   handleSubmit: (
     e: React.SubmitEvent<HTMLFormElement>,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => void;
+  submitButtonText?: string;
   fields: { name: string; type: string; placeholder: string; title: string }[];
   validateSchema: { [key: string]: z.ZodTypeAny };
 }) {
@@ -88,7 +90,7 @@ function Form({
         type="submit"
         className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
       >
-        Tweet
+        {submitButtonText}
       </button>
     </form>
   );
