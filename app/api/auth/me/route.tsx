@@ -5,10 +5,9 @@ import { cookies } from "next/headers";
 
 export async function POST(
   req: NextRequest,
-  ctx: RouteContext<"/api/auth/login">,
+  ctx: RouteContext<"/api/auth/me">,
 ) {
-  const formData = Object.fromEntries(await req.formData()) as RegistrationDto;
-  const { response, token } = await authController.login(formData);
+  const { response, token } = await authController.me();
   const [responseData, status] = response;
   let init = { status };
   if (token) {

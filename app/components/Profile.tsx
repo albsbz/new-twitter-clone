@@ -4,10 +4,12 @@ import { useUserState } from "@/app/lib/store";
 import LoginForm from "./LoginForm";
 import RegistrationForm from "./RegistrationForm";
 import { useState } from "react";
+import useAuth from "../_hooks/useAuth";
 
 function Profile() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const { isAuthenticated, logOut } = useUserState();
+  const { isAuthenticated } = useUserState();
+  const { handleLogout } = useAuth();
   if (!isAuthenticated) {
     return (
       <>
@@ -24,7 +26,7 @@ function Profile() {
   }
 
   const logOutHandler = () => {
-    logOut();
+    handleLogout();
   };
 
   return (

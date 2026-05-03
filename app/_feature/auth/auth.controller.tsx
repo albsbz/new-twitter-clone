@@ -3,7 +3,7 @@ import UserService from "../user/user.service";
 import User, { RegistrationDto } from "./types/RegistrationDto";
 import bcrypt, { genSalt, hash } from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import { cookies } from "next/headers";
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -56,6 +56,45 @@ class AuthController extends BaseController<{}> {
     }
   }
 
+  async logout() {
+    return this.formResponse({
+      message: "Logout successful",
+      status: 200,
+    });
+  }
+
+  async me() {
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get("token");
+    console.log("Cookie retrieved in me():", cookie);
+    const { value: token } = cookie || {};
+    console.log("Token from cookies:", token);
+    if (token) {
+      try {
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        if (decoded && decoded.userId) {
+          return this.formResponse({
+            message: "User info retrieved successfully",
+            data: { id: decoded.userId, name: decoded.name || null },
+            status: 200,
+          });
+        }
+      } catch (error) {
+        console.error("Error verifying token in me():", error);
+        return this.formResponse({
+          message: "Invalid token",
+          error: error instanceof Error ? error.message : "Unknown error",
+          status: 401,
+        });
+      }
+    }
+    return this.formResponse({
+      message: "No token provided",
+      error: "Unauthorized",
+      status: 401,
+    });
+  }
+
   async login(formData: RegistrationDto) {
     const { success, data, error } = User.safeParse(formData);
     console.log("Parsed data:", { success, data, error });
@@ -95,7 +134,8 @@ class AuthController extends BaseController<{}> {
         );
         return this.formResponse({
           message: "Login successful",
-          data: { token },
+          token,
+          data: { id: existingUser.id, name: existingUser.name || null },
           status: 200,
         });
       } catch (error) {

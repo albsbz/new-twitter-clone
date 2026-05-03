@@ -7,6 +7,7 @@ export async function POST(
   ctx: RouteContext<"/api/auth/registration">,
 ) {
   const formData = Object.fromEntries(await req.formData()) as RegistrationDto;
-  const [responseData, status] = await authController.registration(formData);
-  return NextResponse.json(responseData, status);
+  const { response } = await authController.registration(formData);
+  const [responseData, status] = response;
+  return NextResponse.json(responseData, { status });
 }

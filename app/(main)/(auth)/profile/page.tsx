@@ -2,7 +2,7 @@
 import { useUserState } from "@/app/lib/store";
 import RegistrationForm from "../../../components/RegistrationForm";
 import LoginForm from "../../../components/LoginForm";
-import Profile from "@/app/components/Ptofile";
+import Profile from "@/app/components/Profile";
 
 function ProfilePage() {
   return (

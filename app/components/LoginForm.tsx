@@ -20,8 +20,8 @@ function LoginForm() {
     if (success) {
       addNotification({ message: "Login successful!", type: "success" });
       console.log("Login successful, response data:", data);
-      if (data?.token) {
-        logIn({ name: data?.name || null, jwtToken: data?.token });
+      if (data?.id) {
+        logIn({ name: data?.name || null, id: data?.id });
         return;
       } else {
         console.error("Login response missing token:", data);

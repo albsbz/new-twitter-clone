@@ -7,13 +7,18 @@ abstract class BaseController<T> {
     error,
     data,
     status,
+    token,
   }: {
     message: string;
     error?: PostValidationError<T> | string;
     data?: T;
     status: number;
-  }): ResponseContent<T> {
-    return [{ message, error, data }, { status }];
+    token?: string;
+  }): { response: ResponseContent<T>; token?: string } {
+    return {
+      response: [{ message, error, data }, status],
+      token: token,
+    };
   }
 }
 

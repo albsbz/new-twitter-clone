@@ -2,7 +2,6 @@ class ApiService {
   private basicUrl: string;
   private apiUrl: string;
   private init: RequestInit;
-  private authToken: string | null = null;
   constructor({ basicUrl, apiUrl }: { basicUrl: string; apiUrl: string }) {
     this.basicUrl = basicUrl;
     this.apiUrl = apiUrl;
@@ -21,13 +20,6 @@ class ApiService {
     return api ? `${this.apiUrl}/${endpoint}` : `${basicUrl}/${endpoint}`;
   }
 
-  setAuthToken(token: string) {
-    this.authToken = token;
-  }
-
-  removeAuthToken() {
-    this.authToken = null;
-  }
 
   async get({
     endpoint,
@@ -41,12 +33,6 @@ class ApiService {
     try {
       const url = this.constructURL({ endpoint, api, basicUrl });
       let init = { ...this.init, method: "GET" };
-      if (this.authToken) {
-        init.headers = {
-          ...init.headers,
-          Authorization: `Bearer ${this.authToken}`,
-        };
-      }
       const response = await fetch(url, api ? init : undefined);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -80,7 +66,6 @@ class ApiService {
       endpoint,
       api,
       basicUrl,
-      token: this.authToken,
     });
     const url = this.constructURL({ endpoint, api, basicUrl });
     const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
@@ -96,13 +81,6 @@ class ApiService {
       init.headers = {
         "Content-Type": "application/json",
         ...init.headers,
-      };
-    }
-    if (this.authToken) {
-      console.log("Adding auth token to request headers", this.authToken);
-      init.headers = {
-        ...init.headers,
-        Authorization: `Bearer ${this.authToken}`,
       };
     }
     try {
