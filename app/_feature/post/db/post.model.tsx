@@ -12,7 +12,8 @@ const PostSchema = new Schema<PostEntity>({
     dislikes: Number,
   },
   views: Number,
-  userId: Number,
+  userId: String,
 });
 
-export default mongoose.models.Post || mongoose.model<PostEntity>('Post', PostSchema);
+export default mongoose.models.Post ||
+  mongoose.model<PostEntity>("Post", PostSchema);

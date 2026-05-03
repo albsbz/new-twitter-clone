@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/post">) {
   const formData = Object.fromEntries(await req.formData()) as CreatePostDto;
-  const [responseData, status] = await postController.create(formData);
-  return NextResponse.json(responseData, status);
+  const { response } = await postController.create(formData);
+  const [responseData, status] = response;
+  return NextResponse.json(responseData, { status });
 }

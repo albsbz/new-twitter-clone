@@ -1,5 +1,5 @@
 export interface PostEntity {
-  id: number;
+  id: string;
   title: string;
   body: string;
   tags: string[];
@@ -8,5 +8,5 @@ export interface PostEntity {
     dislikes: number;
   };
   views: number;
-  userId: number;
+  userId: string;
 }

@@ -1,9 +1,13 @@
+import Logger from "@/app/_utils/logger";
+
 class ApiService {
   private basicUrl: string;
   private apiUrl: string;
+  private init: RequestInit;
   constructor({ basicUrl, apiUrl }: { basicUrl: string; apiUrl: string }) {
     this.basicUrl = basicUrl;
     this.apiUrl = apiUrl;
+    this.init = {};
   }
 
   private constructURL({
@@ -29,13 +33,14 @@ class ApiService {
   }) {
     try {
       const url = this.constructURL({ endpoint, api, basicUrl });
-      const response = await fetch(url);
+      let init = { ...this.init, method: "GET" };
+      const response = await fetch(url, api ? init : undefined);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return await response.json();
     } catch (error) {
-      console.error("API GET request failed:", error);
+      Logger.error("API GET request failed:", error);
       throw error;
     }
   }
@@ -55,27 +60,53 @@ class ApiService {
     api?: boolean;
     basicUrl?: string;
   }) {
-    try {
-      const url = this.constructURL({ endpoint, api, basicUrl });
-      const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
-      let init;
-      init = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: requestBody,
+    Logger.log("API POST request parameters:", {
+      params,
+      body,
+      formData: formData ? "Provided" : "Not provided",
+      endpoint,
+      api,
+      basicUrl,
+    });
+    const url = this.constructURL({ endpoint, api, basicUrl });
+    const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
+    const init: RequestInit = {
+      ...this.init,
+      method: "POST",
+      body: requestBody,
+    };
+    if (formData) {
+      init.body = new FormData(formData);
+    }
+    if (!formData) {
+      init.headers = {
+        "Content-Type": "application/json",
+        ...init.headers,
       };
-      if (formData) {
-        init = {
-          method: "POST",
-          body: new FormData(formData),
-        };
-      }
+    }
+    try {
       const response = await fetch(url, init);
-      return await response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        Logger.error(
+          "API POST request failed with status:",
+          response.status,
+          "and response:",
+          errorText,
+        );
+        throw new Error(
+          `HTTP error! status: ${response.status}, response: ${errorText}`,
+        );
+      }
+      const { data, ...rest } = await response.json();
+      return {
+        data,
+        ...rest,
+        status: response.status,
+        success: response.ok,
+      };
     } catch (error) {
-      console.error("API POST request failed:", error);
+      Logger.error("API POST request failed:", error);
       throw error;
     }
   }

@@ -4,26 +4,27 @@ import PostResponseDto from "./types/PostResponseDto.type";
 import ApiService from "../api/ApiService";
 import AllPostsResponseDto from "./types/AllPostsResponseDto.type";
 import Post from "./db/post.model";
+import Logger from "@/app/_utils/logger";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(): Promise<AllPostsResponseDto> {
-    const res = await ApiService.get({ endpoint: "/posts" });
-    return res;
+    const data = await ApiService.get({ endpoint: "/posts" });
+    return data;
   }
 
   async findById(id: PostEntity["id"]): Promise<PostResponseDto> {
-    const res = await ApiService.get({ endpoint: `/posts/${id}` });
-    return res;
+    const { data } = await ApiService.get({ endpoint: `/posts/${id}` });
+    return data;
   }
   async create(data: Omit<PostEntity, "id">): Promise<PostEntity> {
     await this.connect();
     const post = new Post(data);
     try {
       const res = await post.save();
-      console.log("Created post:", res);
+      Logger.log("Created post:", res);
       return res;
     } catch (error) {
-      console.error("Failed to save post:", error);
+      Logger.error("Failed to save post:", error);
       throw error;
     }
   }

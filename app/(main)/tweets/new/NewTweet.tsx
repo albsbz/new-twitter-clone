@@ -2,19 +2,34 @@
 import Form from "@/app/components/Form";
 import { PostSchema } from "@/app/_feature/post/types/CreatePostDto";
 import ApiService from "@/app/_feature/api/ApiService";
+import { useNotificationState } from "@/app/lib/store";
+
 function NewTweet() {
+  const { addNotification } = useNotificationState();
   const handleSubmit = async (
     e: React.SubmitEvent<HTMLFormElement>,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => {
     setResponseError(null);
-    const response = await ApiService.post({
-      endpoint: "post",
-      api: true,
-      formData: e.currentTarget,
-    });
-    if (response.error) {
-      setResponseError(response.error);
+    try {
+      const { error } = await ApiService.post({
+        endpoint: "post",
+        api: true,
+        formData: e.currentTarget,
+      });
+      if (error) {
+        setResponseError(error);
+      } else {
+        addNotification({
+          message: "Post created successfully!",
+          type: "success",
+        });
+      }
+    } catch (err) {
+      addNotification({
+        type: "error",
+        message: "Failed to create post. Please try again.",
+      });
     }
   };
   return (

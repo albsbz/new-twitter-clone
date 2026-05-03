@@ -1,9 +1,16 @@
 "use client";
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import useAuth from "../_hooks/useAuth";
 
 function Header() {
+  const { handleLogin } = useAuth();
+  useEffect(() => {
+    handleLogin();
+  }, []);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <header className="flex items-center justify-between p-4 bg-gray-800 text-white">
