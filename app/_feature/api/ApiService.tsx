@@ -1,3 +1,5 @@
+import Logger from "@/app/_utils/logger";
+
 class ApiService {
   private basicUrl: string;
   private apiUrl: string;
@@ -20,7 +22,6 @@ class ApiService {
     return api ? `${this.apiUrl}/${endpoint}` : `${basicUrl}/${endpoint}`;
   }
 
-
   async get({
     endpoint,
     api = false,
@@ -39,7 +40,7 @@ class ApiService {
       }
       return await response.json();
     } catch (error) {
-      console.error("API GET request failed:", error);
+      Logger.error("API GET request failed:", error);
       throw error;
     }
   }
@@ -59,7 +60,7 @@ class ApiService {
     api?: boolean;
     basicUrl?: string;
   }) {
-    console.log("API POST request parameters:", {
+    Logger.log("API POST request parameters:", {
       params,
       body,
       formData: formData ? "Provided" : "Not provided",
@@ -85,6 +86,18 @@ class ApiService {
     }
     try {
       const response = await fetch(url, init);
+      if (!response.ok) {
+        const errorText = await response.text();
+        Logger.error(
+          "API POST request failed with status:",
+          response.status,
+          "and response:",
+          errorText,
+        );
+        throw new Error(
+          `HTTP error! status: ${response.status}, response: ${errorText}`,
+        );
+      }
       const { data, ...rest } = await response.json();
       return {
         data,
@@ -93,7 +106,7 @@ class ApiService {
         success: response.ok,
       };
     } catch (error) {
-      console.error("API POST request failed:", error);
+      Logger.error("API POST request failed:", error);
       throw error;
     }
   }

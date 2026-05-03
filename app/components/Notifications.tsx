@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useNotificationState } from "../lib/store";
 import { constants } from "buffer";
+import Logger from "../_utils/logger";
 
 function Notifications() {
   const { notifications, clearNotifications } = useNotificationState();
@@ -10,10 +11,9 @@ function Notifications() {
     if (notifications.length === 0) return;
     const timer = setTimeout(clearNotifications, 1000);
 
-	console.log("Current notifications:", notifications);
+    Logger.log("Current notifications:", notifications);
     return () => clearTimeout(timer);
   }, [notifications, clearNotifications]);
-
 
   return (
     <div

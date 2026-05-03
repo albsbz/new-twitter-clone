@@ -2,6 +2,7 @@ import ApiService from "@/app/_feature/api/ApiService";
 import { UserSchema } from "@/app/_feature/auth/types/RegistrationDto";
 import Form from "@/app/components/Form";
 import { useNotificationState } from "@/app/lib/store";
+import Logger from "../_utils/logger";
 
 function RegistrationForm() {
   const { addNotification } = useNotificationState();
@@ -21,7 +22,7 @@ function RegistrationForm() {
       return;
     }
     if (status === 409) {
-      console.log("Conflict error during registration:", message);
+      Logger.log("Conflict error during registration:", message);
       addNotification({ message, type: "error" });
       return;
     }

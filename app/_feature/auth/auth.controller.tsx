@@ -2,8 +2,9 @@ import BaseController from "@/app/_common/base.controller";
 import UserService from "../user/user.service";
 import User, { RegistrationDto } from "./types/RegistrationDto";
 import bcrypt, { genSalt, hash } from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import Logger from "@/app/_utils/logger";
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -13,9 +14,29 @@ class AuthController extends BaseController<{}> {
     this.userService = userService;
   }
 
+  async checkAuth() {
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get("token");
+    if (!cookie) {
+      throw new Error("No cookie found");
+    }
+    const { value: token } = cookie;
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        userId: string;
+        name?: string;
+      };
+      if (decoded && decoded.userId) {
+        return { id: decoded.userId, name: decoded.name || null };
+      }
+      throw new Error("Authentication required");
+    }
+    throw new Error("No token provided");
+  }
+
   async registration(formData: RegistrationDto) {
     const { success, data, error } = User.safeParse(formData);
-    console.log("Parsed data:", { success, data, error });
+    Logger.log("Parsed data:", { success, data, error });
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
@@ -46,7 +67,7 @@ class AuthController extends BaseController<{}> {
           status: 201,
         });
       } catch (error) {
-        console.error("Error creating user:", error);
+        Logger.error("Error creating user:", error);
         return this.formResponse({
           message: "Failed to create user",
           error: error instanceof Error ? error.message : "Unknown error",
@@ -64,40 +85,25 @@ class AuthController extends BaseController<{}> {
   }
 
   async me() {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.get("token");
-    console.log("Cookie retrieved in me():", cookie);
-    const { value: token } = cookie || {};
-    console.log("Token from cookies:", token);
-    if (token) {
-      try {
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-        if (decoded && decoded.userId) {
-          return this.formResponse({
-            message: "User info retrieved successfully",
-            data: { id: decoded.userId, name: decoded.name || null },
-            status: 200,
-          });
-        }
-      } catch (error) {
-        console.error("Error verifying token in me():", error);
-        return this.formResponse({
-          message: "Invalid token",
-          error: error instanceof Error ? error.message : "Unknown error",
-          status: 401,
-        });
-      }
+    try {
+      const data = await this.checkAuth();
+      return this.formResponse({
+        message: "User info retrieved successfully",
+        data,
+        status: 200,
+      });
+    } catch (error) {
+      return this.formResponse({
+        message: "No token provided",
+        error: "Unauthorized",
+        status: 401,
+      });
     }
-    return this.formResponse({
-      message: "No token provided",
-      error: "Unauthorized",
-      status: 401,
-    });
   }
 
   async login(formData: RegistrationDto) {
     const { success, data, error } = User.safeParse(formData);
-    console.log("Parsed data:", { success, data, error });
+    Logger.log("Parsed data:", { success, data, error });
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
@@ -139,7 +145,7 @@ class AuthController extends BaseController<{}> {
           status: 200,
         });
       } catch (error) {
-        console.error("Error logging in user:", error);
+        Logger.error("Error logging in user:", error);
         return this.formResponse({
           message: "Failed to login user",
           error: error instanceof Error ? error.message : "Unknown error",

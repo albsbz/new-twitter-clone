@@ -1,6 +1,7 @@
 import BaseService from "@/app/_common/base.service";
 import User from "./db/user.model";
 import { UserEntity } from "./types/UserEntity.interface";
+import Logger from "@/app/_utils/logger";
 
 class UserService extends BaseService {
   async findAll() {
@@ -14,10 +15,10 @@ class UserService extends BaseService {
     await this.connect();
     try {
       const user = await User.findOne({ email });
-      console.log("Found user by email:", user);
+      Logger.log("Found user by email:", user);
       return user;
     } catch (error) {
-      console.error("Error finding user by email:", error);
+      Logger.error("Error finding user by email:", error);
       throw error;
     }
   }
@@ -28,10 +29,10 @@ class UserService extends BaseService {
     const user = new User(data);
     try {
       const res = await user.save();
-      console.log("Created user:", res);
+      Logger.log("Created user:", res);
       return res;
     } catch (error) {
-      console.error("Failed to save user:", error);
+      Logger.error("Failed to save user:", error);
       throw error;
     }
   }

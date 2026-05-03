@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import Logger from "../_utils/logger";
 
 const initialState: {
   name: string | null;
@@ -20,7 +21,7 @@ export const useUserState = create<UserState>()((set) => ({
   ...initialState,
   logIn: ({ name, id }: { name?: string | null; id: string }) =>
     set(() => {
-      console.log("Logging in user:", { name, id });
+      Logger.log("Logging in user:", { name, id });
       return { name, isAuthenticated: true, id };
     }),
   logOut: () =>
