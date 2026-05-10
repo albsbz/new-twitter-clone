@@ -59,6 +59,8 @@ class AuthController extends BaseController<{}> {
           ...data,
           password: hashedPassword,
           isVerified: false,
+          likedPosts: [],
+          dislikedPosts: [],
         });
 
         return this.formResponse({

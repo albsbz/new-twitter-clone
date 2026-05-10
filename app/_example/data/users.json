@@ -1,0 +1,20 @@
+[
+  {
+    "email": "alice@example.com",
+    "password": "password123",
+    "name": "Alice Smith",
+    "isVerified": true
+  },
+  {
+    "email": "bob@example.com",
+    "password": "password123",
+    "name": "Bob Johnson",
+    "isVerified": true
+  },
+  {
+    "email": "charlie@example.com",
+    "password": "password123",
+    "name": "Charlie Brown",
+    "isVerified": false
+  }
+]

@@ -6,6 +6,10 @@ import PostService from "./post.service";
 const postService = new PostService();
 const userService = new UserService();
 const authController = new AuthController({ userService });
-const postController = new PostController({ postService, authController });
+const postController = new PostController({
+  postService,
+  authController,
+  userService,
+});
 
 export default postController;

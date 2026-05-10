@@ -8,6 +8,8 @@ const UserSchema = new Schema<UserEntity>({
   name: String,
   isVerified: Boolean,
   createdAt: String,
+  likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
+  dislikedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
   updatedAt: String,
 });
 

@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Mastering React Hooks",
+    "body": "Deep dive into useEffect and useState hooks.",
+    "views": 120,
+    "reactions": { "likes": 45, "dislikes": 2 }
+  },
+  {
+    "title": "MongoDB Schema Design",
+    "body": "Best practices for modeling your data with Mongoose.",
+    "views": 85,
+    "reactions": { "likes": 30, "dislikes": 1 }
+  },
+  {
+    "title": "Next.js Edge Runtime",
+    "body": "How to deploy globally distributed applications.",
+    "views": 250,
+    "reactions": { "likes": 110, "dislikes": 4 }
+  },
+  {
+    "title": "TypeScript Generics",
+    "body": "Writing reusable and type-safe code components.",
+    "views": 60,
+    "reactions": { "likes": 15, "dislikes": 0 }
+  },
+  {
+    "title": "Web Security 101",
+    "body": "Protecting your app from XSS and CSRF attacks.",
+    "views": 210,
+    "reactions": { "likes": 95, "dislikes": 3 }
+  }
+]

@@ -1,4 +1,4 @@
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
 import ResponseContent, { PostValidationError } from "./types/response.type";
 
 abstract class BaseController<T> {
@@ -19,6 +19,17 @@ abstract class BaseController<T> {
       response: [{ message, error, data }, status],
       token: token,
     };
+  }
+
+  protected validate<DTO>({
+    data,
+    schema,
+  }: {
+    data: DTO;
+    schema: z.ZodType<DTO>;
+  }): boolean {
+    const result = schema.safeParse(data);
+    return result.success;
   }
 }
 

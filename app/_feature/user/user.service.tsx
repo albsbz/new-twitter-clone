@@ -2,6 +2,7 @@ import BaseService from "@/app/_common/base.service";
 import User from "./db/user.model";
 import { UserEntity } from "./types/UserEntity.interface";
 import Logger from "@/app/_utils/logger";
+import { Types } from "mongoose";
 
 class UserService extends BaseService {
   async findAll() {
@@ -9,7 +10,15 @@ class UserService extends BaseService {
   }
 
   async findById(id: UserEntity["id"]) {
-    return {};
+    await this.connect();
+    try {
+      const user = await User.findOne({ _id: id });
+      Logger.log("Found user by id:", user);
+      return user;
+    } catch (error) {
+      Logger.error("Error finding user by id:", error);
+      throw error;
+    }
   }
   async findByEmail(email: UserEntity["email"]): Promise<UserEntity | null> {
     await this.connect();
@@ -33,6 +42,51 @@ class UserService extends BaseService {
       return res;
     } catch (error) {
       Logger.error("Failed to save user:", error);
+      throw error;
+    }
+  }
+  async updateLikes({
+    userId,
+    postId,
+    like,
+    dislike,
+  }: {
+    userId: UserEntity["id"];
+    postId: string;
+    like: { change: boolean; increment: boolean | null };
+    dislike: { change: boolean; increment: boolean | null };
+  }) {
+    await this.connect();
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      if (like.change) {
+        if (like.increment) {
+          user.likedPosts.push(postId);
+        }
+        if (!like.increment) {
+          user.likedPosts = user.likedPosts.filter(
+            (id: Types.ObjectId) => id.toString() !== postId,
+          );
+        }
+      }
+      if (dislike.change) {
+        if (dislike.increment) {
+          user.dislikedPosts.push(postId);
+        }
+        if (!dislike.increment) {
+          user.dislikedPosts = user.dislikedPosts.filter(
+            (id: Types.ObjectId) => id.toString() !== postId,
+          );
+        }
+      }
+      const res = await user.save();
+      Logger.log("Updated user likes:", res);
+      return res;
+    } catch (error) {
+      Logger.error("Failed to update user likes:", error);
       throw error;
     }
   }

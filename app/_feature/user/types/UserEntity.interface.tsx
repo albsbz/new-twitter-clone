@@ -6,4 +6,6 @@ export interface UserEntity {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  likedPosts: string[];
+  dislikedPosts: string[];
 }

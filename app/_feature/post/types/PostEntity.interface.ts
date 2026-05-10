@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export interface PostEntity {
   id: string;
   title: string;
@@ -8,5 +10,6 @@ export interface PostEntity {
     dislikes: number;
   };
   views: number;
-  userId: string;
+
+  author: mongoose.Types.ObjectId;
 }
