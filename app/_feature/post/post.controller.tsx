@@ -118,6 +118,50 @@ class PostController extends BaseController<PostEntity> {
     }
   }
 
+  private buildReactionPayload({
+    isLike,
+    isDislike,
+    increment,
+    postIsLiked,
+    postIsDisliked,
+  }: {
+    isLike?: boolean;
+    isDislike?: boolean;
+    increment: boolean;
+    postIsLiked: boolean;
+    postIsDisliked: boolean;
+  }) {
+    if (isLike && increment) {
+      // Adding a like — also remove an existing dislike
+      return {
+        like: { change: true, increment: true },
+        dislike: {
+          change: postIsDisliked,
+          increment: postIsDisliked ? false : null,
+        },
+      };
+    }
+    if (isLike && !increment) {
+      // Removing a like — leave dislike untouched
+      return {
+        like: { change: true, increment: false },
+        dislike: { change: false, increment: null },
+      };
+    }
+    if (isDislike && increment) {
+      // Adding a dislike — also remove an existing like
+      return {
+        like: { change: postIsLiked, increment: postIsLiked ? false : null },
+        dislike: { change: true, increment: true },
+      };
+    }
+    // Removing a dislike — leave like untouched
+    return {
+      like: { change: false, increment: null },
+      dislike: { change: true, increment: false },
+    };
+  }
+
   async reactPost(data: ReactPostDto) {
     const validated = this.validate<ReactPostDto>({
       data,
@@ -130,10 +174,9 @@ class PostController extends BaseController<PostEntity> {
         status: 400,
       });
     }
-    const id = data.postId;
-    const isLike = data.isLike;
-    const isDislike = data.isDislike;
-    const increment = data.isAdd;
+
+    const { postId: id, isLike, isDislike, isAdd: increment } = data;
+
     if (isLike === undefined && isDislike === undefined) {
       return this.formResponse({
         message: "Validation failed",
@@ -141,6 +184,7 @@ class PostController extends BaseController<PostEntity> {
         status: 400,
       });
     }
+
     try {
       const userId = await this.getUserIdFromAuth();
       if (!userId) {
@@ -150,97 +194,33 @@ class PostController extends BaseController<PostEntity> {
           status: 401,
         });
       }
+
       const user = await this.userService.findById(userId);
       if (!user) {
         throw new Error("User not found");
       }
-      let likedPosts = user.likedPosts || [];
-      let dislikedPosts = user.dislikedPosts || [];
-      const postIsLiked = likedPosts.includes(id);
-      const postIsDisliked = dislikedPosts.includes(id);
-      let updatedPost;
-      if (increment) {
-        if (isLike && postIsDisliked) {
-          updatedPost = await this.postService.reactPost({
-            id,
-            like: { change: true, increment },
-            dislike: { change: true, increment: !increment },
-          });
-          await this.userService.updateLikes({
-            userId: userId.toString(),
-            postId: id,
-            like: { change: true, increment },
-            dislike: { change: true, increment: !increment },
-          });
-        }
-        if (isLike && !postIsDisliked) {
-          updatedPost = await this.postService.reactPost({
-            id,
-            like: { change: true, increment },
-            dislike: { change: false, increment: null },
-          });
-          await this.userService.updateLikes({
-            userId: userId.toString(),
-            postId: id,
-            like: { change: true, increment },
-            dislike: { change: false, increment: null },
-          });
-        }
-        if (isDislike && postIsLiked) {
-          updatedPost = await this.postService.reactPost({
-            id,
-            like: { change: true, increment: !increment },
-            dislike: { change: true, increment },
-          });
-          await this.userService.updateLikes({
-            userId: userId.toString(),
-            postId: id,
-            like: { change: true, increment: !increment },
-            dislike: { change: true, increment },
-          });
-        }
-        if (isDislike && !postIsLiked) {
-          updatedPost = await this.postService.reactPost({
-            id,
-            like: { change: false, increment: null },
-            dislike: { change: true, increment },
-          });
-          await this.userService.updateLikes({
-            userId: userId.toString(),
-            postId: id,
-            like: { change: false, increment: null },
-            dislike: { change: true, increment },
-          });
-        }
-      }
-      if (!increment) {
-        if (isLike) {
-          updatedPost = await this.postService.reactPost({
-            id,
-            like: { change: true, increment },
-            dislike: { change: false, increment: null },
-          });
-          await this.userService.updateLikes({
-            userId: userId.toString(),
-            postId: id,
-            like: { change: true, increment },
-            dislike: { change: false, increment: null },
-          });
-        }
-        if (isDislike) {
-          updatedPost = await this.postService.reactPost({
-            id,
-            like: { change: false, increment: null },
-            dislike: { change: true, increment },
-          });
-          await this.userService.updateLikes({
-            userId: userId.toString(),
-            postId: id,
-            like: { change: false, increment: null },
-            dislike: { change: true, increment },
-          });
-        }
-      }
+
+      const postIsLiked = user.likedPosts.includes(id);
+      const postIsDisliked = user.dislikedPosts.includes(id);
+
+      const reactionPayload = this.buildReactionPayload({
+        isLike,
+        isDislike,
+        increment,
+        postIsLiked,
+        postIsDisliked,
+      });
+
+      const updatedPost = await this.postService.reactPost({
+        id,
+        ...reactionPayload,
+      });
+      await this.userService.updateLikes({
+        userId: userId.toString(),
+        postId: id,
+        ...reactionPayload,
+      });
+
       return this.formResponse({
         message: "Post liked successfully",
         data: updatedPost,
