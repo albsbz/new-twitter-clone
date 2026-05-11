@@ -2,6 +2,8 @@
 
 import React from "react";
 import z from "zod";
+import IFormField from "./types/IFormField";
+import FormInput from "./FormInput";
 
 function Form({
   handleSubmit,
@@ -14,7 +16,7 @@ function Form({
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => void;
   submitButtonText?: string;
-  fields: { name: string; type: string; placeholder: string; title: string }[];
+  fields: IFormField[];
   validateSchema: { [key: string]: z.ZodTypeAny };
 }) {
   const [formErrors, setFormErrors] = React.useState<{ [key: string]: string }>(
@@ -64,23 +66,8 @@ function Form({
           <label htmlFor={field.name} className="mb-1 font-semibold">
             {field.title}
           </label>
-          {field.type === "textarea" ? (
-            <textarea
-              id={field.name}
-              name={field.name}
-              className="border p-2 rounded"
-              placeholder={field.placeholder}
-              rows={4}
-            ></textarea>
-          ) : (
-            <input
-              id={field.name}
-              name={field.name}
-              type={field.type}
-              className="border p-2 rounded"
-              placeholder={field.placeholder}
-            />
-          )}
+          <FormInput type={field.type} field={field} />
+
           <span className="text-red-500 text-sm mt-1">
             {formErrors[field.name]}
           </span>

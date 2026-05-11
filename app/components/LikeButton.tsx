@@ -133,14 +133,14 @@ function LikeButton({
   if (type === "like") {
     return (
       <HandThumbUpIcon
-        className={`w-5 ${reactions[tweetId]?.isLiked ? "text-blue-500" : ""}`}
+        className={`w-5 ${reactions[tweetId]?.isLiked ? "text-blue-500" : ""} cursor-pointer`}
         onClick={handleLike}
       />
     );
   }
   return (
     <HandThumbDownIcon
-      className={`w-5 ${reactions[tweetId]?.isDisliked ? "text-red-500" : ""}`}
+      className={`w-5 ${reactions[tweetId]?.isDisliked ? "text-red-500" : ""} cursor-pointer`}
       onClick={handleDislike}
     />
   );

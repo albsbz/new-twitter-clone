@@ -51,6 +51,12 @@ function NewTweet() {
             placeholder: "What's happening?",
             title: "Body",
           },
+          {
+            name: "tags",
+            type: "particles",
+            placeholder: "Tweet tags",
+            title: "Tags (optional)",
+          },
         ]}
       />
     </div>
