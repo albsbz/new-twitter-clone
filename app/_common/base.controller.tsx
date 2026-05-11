@@ -27,9 +27,9 @@ abstract class BaseController<T> {
   }: {
     data: DTO;
     schema: z.ZodType<DTO>;
-  }): boolean {
+  }): z.ZodSafeParseResult<DTO> {
     const result = schema.safeParse(data);
-    return result.success;
+    return result;
   }
 }
 

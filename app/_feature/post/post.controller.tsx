@@ -78,7 +78,11 @@ class PostController extends BaseController<PostEntity> {
 
   async create(formData: CreatePostDto) {
     const userId = await this.getUserIdFromAuth();
-    const { success, data, error } = Post.safeParse(formData);
+    const { success, data, error } = this.validate<CreatePostDto>({
+      data: formData,
+      schema: Post,
+    });
+
     Logger.log("Parsed data:", { success, data, error });
     if (!success) {
       return this.formResponse({
@@ -97,7 +101,9 @@ class PostController extends BaseController<PostEntity> {
     try {
       const newPost = await this.postService.create({
         ...data,
-        tags: [],
+        tags: !data.tags ? [] : data.tags
+          .filter((tag) => tag)
+          .map((tag) => ({ body: tag.trim(), date: new Date() })),
         reactions: { likes: 0, dislikes: 0 },
         views: 0,
         userId: userId.toString(),
@@ -163,11 +169,11 @@ class PostController extends BaseController<PostEntity> {
   }
 
   async reactPost(data: ReactPostDto) {
-    const validated = this.validate<ReactPostDto>({
+    const { success } = this.validate<ReactPostDto>({
       data,
       schema: ReactPostSchema,
     });
-    if (!validated) {
+    if (!success) {
       return this.formResponse({
         message: "Validation failed",
         error: "Invalid request data",

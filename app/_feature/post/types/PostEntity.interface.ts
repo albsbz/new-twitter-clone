@@ -4,7 +4,7 @@ export interface PostEntity {
   id: string;
   title: string;
   body: string;
-  tags: string[];
+  tags: { body: string; date: Date }[];
   reactions: {
     likes: number;
     dislikes: number;

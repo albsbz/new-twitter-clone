@@ -32,7 +32,7 @@ function FormInput({ type, field }: { type: string; field: IFormField }) {
       setTags((prev) => [...prev, tag]);
     }
   };
-  
+
   if (type === "textarea") {
     return (
       <textarea
