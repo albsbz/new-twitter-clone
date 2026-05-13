@@ -45,6 +45,18 @@ class PostController extends BaseController<PostEntity> {
       if (!post) {
         throw new Error("Post not found");
       }
+      const userId = await this.getUserIdFromAuth();
+      if (!userId) {
+        return post;
+      }
+      if (userId) {
+        const user = await this.userService.findById(userId);
+        if (!user) {
+          return post;
+        }
+        post.isLiked = user.likedPosts?.includes(post.id) || false;
+        post.isDisliked = user.dislikedPosts?.includes(post.id) || false;
+      }
       return post;
     } catch (error) {
       Logger.error("Error fetching post:", error);
@@ -101,9 +113,11 @@ class PostController extends BaseController<PostEntity> {
     try {
       const newPost = await this.postService.create({
         ...data,
-        tags: !data.tags ? [] : data.tags
-          .filter((tag) => tag)
-          .map((tag) => ({ body: tag.trim(), date: new Date() })),
+        tags: !data.tags
+          ? []
+          : data.tags
+              .filter((tag) => tag)
+              .map((tag) => ({ body: tag.trim(), date: new Date() })),
         reactions: { likes: 0, dislikes: 0 },
         views: 0,
         userId: userId.toString(),

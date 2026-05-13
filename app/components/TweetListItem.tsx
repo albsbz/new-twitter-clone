@@ -1,24 +1,13 @@
 "use client";
-import { useEffect } from "react";
 import Link from "next/link";
 
 import { EyeIcon } from "@heroicons/react/16/solid";
 import LikeButton from "./LikeButton";
-import { useReactPostState } from "../lib/store";
 import { PostEntityWithReactions } from "../_feature/post/types/AllPostsResponseDto.type";
+import usePostReactions from "../_hooks/usePostReactions";
 
 function TweetListItem({ tweet }: { tweet: PostEntityWithReactions }) {
-  const addLike = useReactPostState((state) => state.addLike);
-  const addDislike = useReactPostState((state) => state.addDislike);
-
-  useEffect(() => {
-    if (tweet.isLiked) {
-      addLike(tweet.id);
-    }
-    if (tweet.isDisliked) {
-      addDislike(tweet.id);
-    }
-  }, [tweet, addLike, addDislike]);
+  usePostReactions(tweet);
 
   return (
     <article className=" p-4 border rounded shadow flex flex-col justify-between">

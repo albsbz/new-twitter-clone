@@ -20,19 +20,43 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
           total: [{ $count: "count" }],
         },
       },
+      {
+        $project: {
+          posts: {
+            $map: {
+              input: "$posts",
+              as: "post",
+              in: {
+                id: { $toString: "$$post._id" },
+                title: "$$post.title",
+                body: "$$post.body",
+                author: { $toString: "$$post.author" },
+                reactions: "$$post.reactions",
+                views: "$$post.views",
+                createdAt: "$$post.createdAt",
+                updatedAt: "$$post.updatedAt",
+                tags: {
+                  $map: {
+                    input: { $ifNull: ["$$post.tags", []] },
+                    as: "tag",
+                    in: {
+                      id: { $toString: "$$tag._id" },
+                      body: "$$tag.body",
+                      date: "$$tag.date",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          total: 1,
+        },
+      },
     ]);
-    const posts = result?.posts
-      ? result.posts.map((post: any) => ({
-          ...post,
-          author: post.author.toString(),
-          _id: post._id.toString(),
-          id: post._id.toString(),
-        }))
-      : [];
 
     const total = result?.total?.[0]?.count ?? 0;
     const response: AllPostsResponseDto = {
-      posts,
+      posts: result?.posts ?? [],
       limit,
       skip,
       total,
@@ -41,8 +65,45 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   }
 
   async findById(id: PostEntity["id"]): Promise<PostResponseDto> {
-    const post = await Post.findById(id);
-    return post;
+    await this.connect();
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
+
+    const [post] = await Post.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id),
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          id: { $toString: "$_id" },
+          title: 1,
+          body: 1,
+          author: { $toString: "$author" },
+          reactions: 1,
+          views: 1,
+          createdAt: { $toString: "$createdAt" },
+          updatedAt: { $toString: "$updatedAt" },
+          tags: {
+            $map: {
+              input: { $ifNull: ["$tags", []] },
+              as: "tag",
+              in: {
+                id: { $toString: "$$tag._id" },
+                body: "$$tag.body",
+                date: { $toString: "$$tag.date" },
+              },
+            },
+          },
+        },
+      },
+    ]);
+    console.log("Fetched post:", post);
+
+    return post ?? null;
   }
   async create(
     data: Omit<PostEntity, "id" | "author"> & { userId: string },
