@@ -8,6 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  BUILD_MONGODB_URI: mongodb://127.0.0.1:27017/new-twitter-clone-build
 
 jobs:
   build-and-push:
@@ -83,7 +84,7 @@ jobs:
 
       - name: Seed MongoDB data for build
         env:
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_URI: ${{ env.BUILD_MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
           EMAIL_SERVER_PORT: ${{ secrets.EMAIL_SERVER_PORT }}
@@ -105,7 +106,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_EXTERNAL_URL=${{ secrets.NEXT_PUBLIC_EXTERNAL_URL }}
             NEXT_PUBLIC_BASIC_URL=${{ secrets.NEXT_PUBLIC_BASIC_URL }}
-            MONGODB_URI=mongodb://127.0.0.1:27017/new-twitter-clone-build
+            MONGODB_URI=${{ env.BUILD_MONGODB_URI }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -178,6 +179,26 @@ jobs:
 
             docker compose -f docker-compose.vps.yml --env-file .env.production pull
             docker compose -f docker-compose.vps.yml --env-file .env.production up -d --remove-orphans
+
+            echo "Waiting for nextjs container to start before seeding..."
+            NEXTJS_UP=0
+            for i in $(seq 1 24); do
+              STATE="$(docker inspect --format='{{.State.Status}}' nextjs_app_prod 2>/dev/null || true)"
+              if [ "$STATE" = "running" ]; then
+                NEXTJS_UP=1
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$NEXTJS_UP" -ne 1 ]; then
+              echo "nextjs container did not start in time, seeding skipped"
+              exit 1
+            fi
+
+            echo "Seeding production database..."
+            docker compose -f docker-compose.vps.yml --env-file .env.production exec -T nextjs npm run seed
+            echo "Production seed completed."
 
             DEPLOY_OK=0
             for i in $(seq 1 24); do
