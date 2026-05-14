@@ -1,8 +1,12 @@
+import { Suspense } from "react";
 import VerifyEmail from "./VerifyEmail";
 
-
 function page() {
-  return <VerifyEmail />;
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmail />
+    </Suspense>
+  );
 }
 
 export default page;

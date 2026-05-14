@@ -12,8 +12,6 @@ import VerifyEmail, {
   VerifyEmailSchema,
 } from "./types/VerifyEmailDto";
 
-const { JWT_SECRET } = getServerEnv();
-
 class AuthController extends BaseController<{}> {
   private userService: UserService;
 
@@ -23,6 +21,7 @@ class AuthController extends BaseController<{}> {
   }
 
   async checkAuth() {
+    const { JWT_SECRET } = getServerEnv();
     const cookieStore = await cookies();
     const cookie = cookieStore.get("token");
     if (!cookie) {
@@ -55,6 +54,7 @@ class AuthController extends BaseController<{}> {
           status: 400,
         });
       }
+      const { JWT_SECRET } = getServerEnv();
       const { token } = validated.data;
       const decoded = jwt.verify(token, JWT_SECRET) as {
         userId: string;
@@ -119,6 +119,7 @@ class AuthController extends BaseController<{}> {
           dislikedPosts: [],
         });
 
+        const { JWT_SECRET } = getServerEnv();
         const emailVerificationToken = jwt.sign(
           { userId: newUser.id },
           JWT_SECRET,
@@ -200,6 +201,7 @@ class AuthController extends BaseController<{}> {
             status: 401,
           });
         }
+        const { JWT_SECRET } = getServerEnv();
         const token = jwt.sign({ userId: existingUser.id }, JWT_SECRET, {
           expiresIn: "1h",
         });

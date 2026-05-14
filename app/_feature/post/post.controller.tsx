@@ -34,7 +34,6 @@ class PostController extends BaseController<PostEntity> {
       userId = data.id;
     } catch (error) {
       Logger.error("Error checking authentication:", error);
-      return userId;
     }
     return userId;
   }
@@ -67,24 +66,25 @@ class PostController extends BaseController<PostEntity> {
   async getAll() {
     try {
       const { posts } = await this.postService.findAll();
-      const userId = await this.getUserIdFromAuth();
-      if (!userId) {
-        return posts;
-      }
-      if (userId) {
-        const user = await this.userService.findById(userId);
-        if (!user) {
-          return [];
-        }
-        return posts.map((post) => ({
-          ...post,
-          isLiked: user.likedPosts?.includes(post.id) || false,
-          isDisliked: user.dislikedPosts?.includes(post.id) || false,
-        }));
-      }
+      return posts;
     } catch (error) {
       Logger.error("Error fetching posts:", error);
+      console.error("Error fetching posts:", error);
       throw new Error("Failed to fetch posts");
+    }
+  }
+  async getReactions() {
+    try {
+      const userId = await this.getUserIdFromAuth();
+      if (!userId) {
+        return { likedPosts: [], dislikedPosts: [] };
+      }
+      const reactions = await this.userService.findByIdLiked(userId);
+      return reactions;
+    } catch (error) {
+      Logger.error("Error fetching reactions:", error);
+      console.error("Error fetching reactions:", error);
+      return { likedPosts: [], dislikedPosts: [] };
     }
   }
 
