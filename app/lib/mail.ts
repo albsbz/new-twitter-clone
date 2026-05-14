@@ -1,18 +1,17 @@
 import nodemailer from "nodemailer";
 import { getServerEnv, publicEnv } from "./env";
 
-const serverEnv = getServerEnv();
-
-const transporter = nodemailer.createTransport({
-  host: serverEnv.EMAIL_SERVER_HOST,
-  port: serverEnv.EMAIL_SERVER_PORT,
-  auth: {
-    user: serverEnv.EMAIL_SERVER_USER,
-    pass: serverEnv.EMAIL_SERVER_PASSWORD,
-  },
-});
-
 export const sendVerificationEmail = async (email: string, token: string) => {
+  const serverEnv = getServerEnv();
+  const transporter = nodemailer.createTransport({
+    host: serverEnv.EMAIL_SERVER_HOST,
+    port: serverEnv.EMAIL_SERVER_PORT,
+    auth: {
+      user: serverEnv.EMAIL_SERVER_USER,
+      pass: serverEnv.EMAIL_SERVER_PASSWORD,
+    },
+  });
+
   const confirmLink = `${publicEnv.NEXT_PUBLIC_BASIC_URL}/verify-email?token=${token}`;
 
   const mailOptions = {

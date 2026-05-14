@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import { getServerEnv } from "./env";
 
-const { MONGODB_URI } = getServerEnv();
-
 let cached = (global as any).mongoose;
 
 if (!cached) {
@@ -10,6 +8,7 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  const { MONGODB_URI } = getServerEnv();
   if (!MONGODB_URI) {
     throw new Error("Please define the MONGODB_URI environment variable");
   }
