@@ -12,6 +12,16 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })' --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     permissions:
       contents: read
       packages: write
@@ -20,6 +30,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies for seed
+        run: npm ci
 
       - name: Set image names
         id: image
@@ -39,11 +58,41 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+
+      - name: Wait for MongoDB service
+        run: |
+          MONGO_ID="$(docker ps --filter 'ancestor=mongo:latest' --format '{{.ID}}' | head -n 1)"
+          if [ -z "$MONGO_ID" ]; then
+            echo "MongoDB service container not found"
+            exit 1
+          fi
+
+          for i in $(seq 1 30); do
+            STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$MONGO_ID")"
+            if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "running" ]; then
+              echo "MongoDB is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MongoDB did not become ready in time"
+          exit 1
+
+      - name: Seed MongoDB data for build
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017/new-twitter-clone-build
+          NEXT_PUBLIC_EXTERNAL_URL: ${{ secrets.NEXT_PUBLIC_EXTERNAL_URL }}
+          NEXT_PUBLIC_BASIC_URL: ${{ secrets.NEXT_PUBLIC_BASIC_URL }}
+        run: npm run seed
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
+          network: host
           push: true
           tags: |
             ${{ steps.image.outputs.image_sha }}
@@ -51,6 +100,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_EXTERNAL_URL=${{ secrets.NEXT_PUBLIC_EXTERNAL_URL }}
             NEXT_PUBLIC_BASIC_URL=${{ secrets.NEXT_PUBLIC_BASIC_URL }}
+            MONGODB_URI=mongodb://127.0.0.1:27017/new-twitter-clone-build
 
   deploy:
     runs-on: ubuntu-latest
