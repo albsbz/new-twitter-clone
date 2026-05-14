@@ -6,10 +6,13 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import Logger from "@/app/_utils/logger";
 import { sendVerificationEmail } from "@/app/lib/mail";
+import { getServerEnv } from "@/app/lib/env";
 import VerifyEmail, {
   VerifyEmailDto,
   VerifyEmailSchema,
 } from "./types/VerifyEmailDto";
+
+const { JWT_SECRET } = getServerEnv();
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -27,7 +30,7 @@ class AuthController extends BaseController<{}> {
     }
     const { value: token } = cookie;
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      const decoded = jwt.verify(token, JWT_SECRET) as {
         userId: string;
         name?: string;
       };
@@ -53,7 +56,7 @@ class AuthController extends BaseController<{}> {
         });
       }
       const { token } = validated.data;
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      const decoded = jwt.verify(token, JWT_SECRET) as {
         userId: string;
       };
       if (!decoded || !decoded.userId) {
@@ -118,7 +121,7 @@ class AuthController extends BaseController<{}> {
 
         const emailVerificationToken = jwt.sign(
           { userId: newUser.id },
-          process.env.JWT_SECRET!,
+          JWT_SECRET,
           { expiresIn: "24h" },
         );
         sendVerificationEmail(newUser.email, emailVerificationToken).catch(
@@ -197,13 +200,9 @@ class AuthController extends BaseController<{}> {
             status: 401,
           });
         }
-        const token = jwt.sign(
-          { userId: existingUser.id },
-          process.env.JWT_SECRET!,
-          {
-            expiresIn: "1h",
-          },
-        );
+        const token = jwt.sign({ userId: existingUser.id }, JWT_SECRET, {
+          expiresIn: "1h",
+        });
         return this.formResponse({
           message: "Login successful",
           token,

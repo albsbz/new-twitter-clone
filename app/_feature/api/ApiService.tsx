@@ -1,4 +1,5 @@
 import Logger from "@/app/_utils/logger";
+import { publicEnv } from "@/app/lib/env";
 
 class ApiService {
   private basicUrl: string;
@@ -111,15 +112,15 @@ class ApiService {
     }
   }
 }
-if (!process.env.NEXT_PUBLIC_EXTERNAL_URL) {
+if (!publicEnv.NEXT_PUBLIC_EXTERNAL_URL) {
   throw new Error(
     "NEXT_PUBLIC_EXTERNAL_URL environment variable is not defined",
   );
 }
-if (!process.env.NEXT_PUBLIC_BASIC_URL) {
+if (!publicEnv.NEXT_PUBLIC_BASIC_URL) {
   throw new Error("NEXT_PUBLIC_BASIC_URL environment variable is not defined");
 }
 export default new ApiService({
-  basicUrl: process.env.NEXT_PUBLIC_EXTERNAL_URL,
-  apiUrl: `${process.env.NEXT_PUBLIC_BASIC_URL}/api`,
+  basicUrl: publicEnv.NEXT_PUBLIC_EXTERNAL_URL,
+  apiUrl: `${publicEnv.NEXT_PUBLIC_BASIC_URL}/api`,
 });
