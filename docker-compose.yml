@@ -15,12 +15,18 @@ services:
       - app_network
 
   nextjs:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_EXTERNAL_URL: ${NEXT_PUBLIC_EXTERNAL_URL:-https://dummyjson.com}
+        NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL:-http://localhost:3000}
     container_name: nextjs_app
     ports:
       - "3000:3000"
     depends_on:
       - mongo
+    env_file:
+      - .env.development
     environment:
       MONGODB_URI: mongodb://root:password@mongo:27017/admin
     volumes:
@@ -36,6 +42,34 @@ services:
           action: sync
         - path: ./package.json
           action: rebuild
+
+  nextjs-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_EXTERNAL_URL: ${NEXT_PUBLIC_EXTERNAL_URL}
+        NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL}
+    container_name: nextjs_app_prod
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    env_file:
+      - .env.production
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      EMAIL_SERVER_HOST: ${EMAIL_SERVER_HOST}
+      EMAIL_SERVER_PORT: ${EMAIL_SERVER_PORT}
+      EMAIL_SERVER_USER: ${EMAIL_SERVER_USER}
+      EMAIL_SERVER_PASSWORD: ${EMAIL_SERVER_PASSWORD}
+      NEXT_PUBLIC_EXTERNAL_URL: ${NEXT_PUBLIC_EXTERNAL_URL}
+      NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL}
+      NODE_ENV: production
+    command: sh -c "npm run seed && npm run start"
+    networks:
+      - app_network
 
 volumes:
   mongo_data:
