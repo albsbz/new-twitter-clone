@@ -2,9 +2,14 @@ import BaseController from "@/app/_common/base.controller";
 import UserService from "../user/user.service";
 import User, { RegistrationDto } from "./types/RegistrationDto";
 import bcrypt, { genSalt, hash } from "bcryptjs";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import Logger from "@/app/_utils/logger";
+import { sendVerificationEmail } from "@/app/lib/mail";
+import VerifyEmail, {
+  VerifyEmailDto,
+  VerifyEmailSchema,
+} from "./types/VerifyEmailDto";
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -32,6 +37,54 @@ class AuthController extends BaseController<{}> {
       throw new Error("Authentication required");
     }
     throw new Error("No token provided");
+  }
+
+  async verifyEmail(data: VerifyEmailDto) {
+    try {
+      const validated = this.validate<VerifyEmailDto>({
+        data,
+        schema: VerifyEmailSchema,
+      });
+      if (!validated.success) {
+        return this.formResponse({
+          message: "Validation failed",
+          error: JSON.stringify(validated.error.issues),
+          status: 400,
+        });
+      }
+      const { token } = validated.data;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        userId: string;
+      };
+      if (!decoded || !decoded.userId) {
+        return this.formResponse({
+          message: "Invalid token",
+          error: "Token verification failed",
+          status: 400,
+        });
+      }
+      const result = await this.userService.verifyEmail(decoded.userId);
+      if (result?.isVerified) {
+        return this.formResponse({
+          message: "Email verified successfully",
+          data: { isVerified: result.isVerified },
+          status: 200,
+        });
+      } else {
+        return this.formResponse({
+          message: "User not found",
+          error: "No user associated with this token",
+          status: 404,
+        });
+      }
+    } catch (error) {
+      Logger.error("Error verifying email:", error);
+      return this.formResponse({
+        message: "Failed to verify email",
+        error: error instanceof Error ? error.message : "Unknown error",
+        status: 500,
+      });
+    }
   }
 
   async registration(formData: RegistrationDto) {
@@ -62,6 +115,17 @@ class AuthController extends BaseController<{}> {
           likedPosts: [],
           dislikedPosts: [],
         });
+
+        const emailVerificationToken = jwt.sign(
+          { userId: newUser.id },
+          process.env.JWT_SECRET!,
+          { expiresIn: "24h" },
+        );
+        sendVerificationEmail(newUser.email, emailVerificationToken).catch(
+          (err) => {
+            Logger.error("Error sending verification email:", err);
+          },
+        );
 
         return this.formResponse({
           message: "User registered successfully",
