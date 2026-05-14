@@ -45,6 +45,14 @@ class UserService extends BaseService {
       throw error;
     }
   }
+  async verifyEmail(userId: UserEntity["id"]) {
+    await this.connect();
+    return User.findByIdAndUpdate(
+      userId,
+      { isVerified: true },
+      { returnDocument: "after" },
+    ).select("isVerified");
+  }
   async updateLikes({
     userId,
     postId,

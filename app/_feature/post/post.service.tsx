@@ -101,7 +101,6 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
         },
       },
     ]);
-    console.log("Fetched post:", post);
 
     return post ?? null;
   }
