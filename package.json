@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build-debug": "next build --debug",
+    "build-development": "next build --debug-prerender",
     "start": "next start",
     "lint": "eslint",
     "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"Node\"}' app/_example/seed.ts"

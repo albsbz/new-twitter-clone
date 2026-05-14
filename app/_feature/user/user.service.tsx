@@ -20,6 +20,19 @@ class UserService extends BaseService {
       throw error;
     }
   }
+
+   async findByIdLiked(id: UserEntity["id"]) {
+    await this.connect();
+    try {
+      const user = await User.findOne({ _id: id }).select("likedPosts dislikedPosts") ;
+      Logger.log("Found user by id:", user);
+      return user;
+    } catch (error) {
+      Logger.error("Error finding user by id:", error);
+      throw error;
+    }
+  }
+
   async findByEmail(email: UserEntity["email"]): Promise<UserEntity | null> {
     await this.connect();
     try {
