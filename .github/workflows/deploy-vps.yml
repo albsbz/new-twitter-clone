@@ -84,6 +84,11 @@ jobs:
       - name: Seed MongoDB data for build
         env:
           MONGODB_URI: mongodb://127.0.0.1:27017/new-twitter-clone-build
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
+          EMAIL_SERVER_PORT: ${{ secrets.EMAIL_SERVER_PORT }}
+          EMAIL_SERVER_USER: ${{ secrets.EMAIL_SERVER_USER }}
+          EMAIL_SERVER_PASSWORD: ${{ secrets.EMAIL_SERVER_PASSWORD }}
           NEXT_PUBLIC_EXTERNAL_URL: ${{ secrets.NEXT_PUBLIC_EXTERNAL_URL }}
           NEXT_PUBLIC_BASIC_URL: ${{ secrets.NEXT_PUBLIC_BASIC_URL }}
         run: npm run seed
