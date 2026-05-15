@@ -1,7 +1,9 @@
 import postController from "@/app/_feature/post";
 import Tweets from "./Tweets";
+import { connection } from "next/server";
 
 async function TweetsPage() {
+  await connection();
   const tweets = await postController.getAll();
   return (
     <div>
