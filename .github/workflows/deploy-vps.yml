@@ -121,6 +121,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
           source: docker-compose.vps.yml,Caddyfile
           target: ${{ secrets.VPS_APP_DIR }}
@@ -148,6 +149,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
           envs: APP_IMAGE,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN,NEXT_PUBLIC_EXTERNAL_URL,NEXT_PUBLIC_BASIC_URL,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
           script: |
