@@ -4,8 +4,8 @@ import Tweets from "./tweets/Tweets";
 import { connection } from "next/server";
 
 export default async function Home() {
-  let tweets = await postController.getAll();
   await connection();
+  let tweets = await postController.getAll();
   const reactions = await postController.getReactions();
   tweets = tweets.map((tweet) => ({
     ...tweet,
