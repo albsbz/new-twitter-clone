@@ -144,6 +144,10 @@ jobs:
               echo "DOMAIN_TWITTER is empty. Set the secret in the twitter repository."
               exit 1
             fi
+            if [ -z "$MONGODB_URI" ] || [ -z "$JWT_SECRET" ]; then
+              echo "MONGODB_URI or JWT_SECRET is empty. Set required secrets in the twitter repository."
+              exit 1
+            fi
 
             if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
               echo "docker-compose.vps.yml or Caddyfile not found in VPS_APP_DIR. Run infra deploy first."
@@ -153,9 +157,7 @@ jobs:
             # If .env.production does not exist, create with DOMAIN_TWITTER from secrets
             if [ ! -f .env.production ]; then
               umask 077
-              cat > .env.production <<EOF
-            DOMAIN_TWITTER=${DOMAIN_TWITTER}
-            EOF
+              printf 'DOMAIN_TWITTER=%s\n' "$DOMAIN_TWITTER" > .env.production
               chmod 600 .env.production
               echo ".env.production created with DOMAIN_TWITTER from secrets."
             fi
@@ -172,6 +174,12 @@ jobs:
 
             update_env DOMAIN_TWITTER "$DOMAIN_TWITTER"
             update_env APP_IMAGE_TWITTER "$APP_IMAGE_TWITTER"
+            update_env MONGODB_URI "$MONGODB_URI"
+            update_env JWT_SECRET "$JWT_SECRET"
+            update_env EMAIL_SERVER_HOST "$EMAIL_SERVER_HOST"
+            update_env EMAIL_SERVER_PORT "$EMAIL_SERVER_PORT"
+            update_env EMAIL_SERVER_USER "$EMAIL_SERVER_USER"
+            update_env EMAIL_SERVER_PASSWORD "$EMAIL_SERVER_PASSWORD"
 
             chmod 600 .env.production
 
@@ -181,7 +189,7 @@ jobs:
             docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps nextjs-twitter
 
             DEPLOY_OK=0
-            for i in $(seq 1 24); do
+            for i in $(seq 1 36); do
               STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' nextjs_twitter_prod 2>/dev/null || true)"
               if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "running" ]; then
                 DEPLOY_OK=1
@@ -192,6 +200,10 @@ jobs:
 
             if [ "$DEPLOY_OK" -ne 1 ]; then
               echo "Deploy healthcheck failed."
+              echo "Container state:"
+              docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}} exit={{.State.ExitCode}} restarting={{.State.Restarting}}' nextjs_twitter_prod || true
+              echo "Recent container logs:"
+              docker logs --tail 120 nextjs_twitter_prod || true
               exit 1
             fi
 
