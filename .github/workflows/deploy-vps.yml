@@ -122,6 +122,8 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
           DOMAIN_TWITTER: ${{ secrets.DOMAIN_TWITTER }}
+          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
@@ -134,7 +136,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN_TWITTER,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
+          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN_TWITTER,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
           script: |
             set -e
 
@@ -147,6 +149,12 @@ jobs:
             if [ -z "$MONGODB_URI" ] || [ -z "$JWT_SECRET" ]; then
               echo "MONGODB_URI or JWT_SECRET is empty. Set required secrets in the twitter repository."
               exit 1
+            fi
+
+            MONGODB_URI_EFFECTIVE="$MONGODB_URI"
+            if echo "$MONGODB_URI_EFFECTIVE" | grep -Eq 'mongodb://([^@/]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/'; then
+              MONGODB_URI_EFFECTIVE="$(echo "$MONGODB_URI_EFFECTIVE" | sed -E 's#(mongodb://([^@/]+@)?)(localhost|127\.0\.0\.1)(:[0-9]+)?/#\1mongodb_prod\4/#')"
+              echo "MONGODB_URI host normalized to mongodb_prod for container networking."
             fi
 
             if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
@@ -174,7 +182,9 @@ jobs:
 
             update_env DOMAIN_TWITTER "$DOMAIN_TWITTER"
             update_env APP_IMAGE_TWITTER "$APP_IMAGE_TWITTER"
-            update_env MONGODB_URI "$MONGODB_URI"
+            update_env MONGODB_URI "$MONGODB_URI_EFFECTIVE"
+            update_env MONGO_INITDB_ROOT_USERNAME "$MONGO_INITDB_ROOT_USERNAME"
+            update_env MONGO_INITDB_ROOT_PASSWORD "$MONGO_INITDB_ROOT_PASSWORD"
             update_env JWT_SECRET "$JWT_SECRET"
             update_env EMAIL_SERVER_HOST "$EMAIL_SERVER_HOST"
             update_env EMAIL_SERVER_PORT "$EMAIL_SERVER_PORT"
