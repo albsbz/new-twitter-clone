@@ -144,15 +144,14 @@ jobs:
               exit 1
             fi
 
-            # If .env.production does not exist, create with domain defaults
+            # If .env.production does not exist, create with DOMAIN_TWITTER from secrets
             if [ ! -f .env.production ]; then
               umask 077
               cat > .env.production <<EOF
-DOMAIN_TWITTER=twitter.alexkamens.org
-DOMAIN_LANDING=alexkamens.org
+DOMAIN_TWITTER=${DOMAIN_TWITTER}
 EOF
               chmod 600 .env.production
-              echo ".env.production created with domain defaults."
+              echo ".env.production created with DOMAIN_TWITTER from secrets."
             fi
 
             update_env() {
