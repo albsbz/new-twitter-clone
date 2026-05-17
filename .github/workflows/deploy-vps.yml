@@ -148,9 +148,9 @@ jobs:
             if [ ! -f .env.production ]; then
               umask 077
               cat > .env.production <<EOF
-              DOMAIN_TWITTER=twitter.alexkamens.org
-              DOMAIN_LANDING=alexkamens.org
-              EOF
+DOMAIN_TWITTER=twitter.alexkamens.org
+DOMAIN_LANDING=alexkamens.org
+EOF
               chmod 600 .env.production
               echo ".env.production created with domain defaults."
             fi
