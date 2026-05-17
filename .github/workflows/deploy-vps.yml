@@ -178,7 +178,7 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
             docker compose -f docker-compose.vps.yml --env-file .env.production pull nextjs-twitter
-            docker compose -f docker-compose.vps.yml --env-file .env.production up -d nextjs-twitter
+            docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps nextjs-twitter
 
             DEPLOY_OK=0
             for i in $(seq 1 24); do
