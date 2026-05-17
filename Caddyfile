@@ -1,5 +1,15 @@
-{$DOMAIN} {
+{$DOMAIN_TWITTER:twitter.alexkamens.org} {
   encode gzip zstd
 
-  reverse_proxy nextjs:3000
+  reverse_proxy nextjs-twitter:3000
+}
+
+{$DOMAIN_LANDING:alexkamens.org} {
+  encode gzip zstd
+
+  reverse_proxy nextjs-landing:3000
+}
+
+www.alexkamens.org {
+  redir https://alexkamens.org{uri} permanent
 }
