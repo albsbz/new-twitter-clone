@@ -112,39 +112,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     env:
-      DEPLOY_IMAGE_REPO: ${{ github.repository }}
-      DEPLOY_IMAGE_SHA: ${{ github.sha }}
-      APP_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      APP_IMAGE_TWITTER: ghcr.io/${{ github.repository }}:${{ github.sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Copy VPS compose file
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-          port: ${{ secrets.VPS_SSH_PORT }}
-          source: docker-compose.vps.yml,Caddyfile
-          target: ${{ secrets.VPS_APP_DIR }}
-          overwrite: true
-
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          APP_IMAGE: ${{ env.APP_IMAGE }}
-          DEPLOY_IMAGE_REPO: ${{ env.DEPLOY_IMAGE_REPO }}
-          DEPLOY_IMAGE_SHA: ${{ env.DEPLOY_IMAGE_SHA }}
+          APP_IMAGE_TWITTER: ${{ env.APP_IMAGE_TWITTER }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
-          DOMAIN: ${{ secrets.DOMAIN }}
-          NEXT_PUBLIC_EXTERNAL_URL: ${{ secrets.NEXT_PUBLIC_EXTERNAL_URL }}
-          NEXT_PUBLIC_BASIC_URL: ${{ secrets.NEXT_PUBLIC_BASIC_URL }}
-          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
@@ -157,65 +133,50 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: APP_IMAGE,DEPLOY_IMAGE_REPO,DEPLOY_IMAGE_SHA,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN,NEXT_PUBLIC_EXTERNAL_URL,NEXT_PUBLIC_BASIC_URL,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
+          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
           script: |
             set -e
 
             cd "$VPS_APP_DIR"
 
-            umask 077
-            cat > .env.production <<EOF
-            NEXT_PUBLIC_EXTERNAL_URL=$NEXT_PUBLIC_EXTERNAL_URL
-            NEXT_PUBLIC_BASIC_URL=$NEXT_PUBLIC_BASIC_URL
-            DOMAIN=$DOMAIN
-            MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME
-            MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD
-            MONGODB_URI=$MONGODB_URI
-            JWT_SECRET=$JWT_SECRET
-            EMAIL_SERVER_HOST=$EMAIL_SERVER_HOST
-            EMAIL_SERVER_PORT=$EMAIL_SERVER_PORT
-            EMAIL_SERVER_USER=$EMAIL_SERVER_USER
-            EMAIL_SERVER_PASSWORD=$EMAIL_SERVER_PASSWORD
-            EOF
+            if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
+              echo "docker-compose.vps.yml or Caddyfile not found in VPS_APP_DIR. Run infra deploy first."
+              exit 1
+            fi
+
+            # If .env.production does not exist, create with domain defaults
+            if [ ! -f .env.production ]; then
+              umask 077
+              cat > .env.production <<EOF
+              DOMAIN_TWITTER=twitter.alexkamens.org
+              DOMAIN_LANDING=alexkamens.org
+              EOF
+              chmod 600 .env.production
+              echo ".env.production created with domain defaults."
+            fi
+
+            update_env() {
+              KEY="$1"
+              VALUE="$2"
+              if grep -q "^${KEY}=" .env.production; then
+                sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" .env.production
+              else
+                printf '\n%s=%s\n' "$KEY" "$VALUE" >> .env.production
+              fi
+            }
+
+            update_env APP_IMAGE_TWITTER "$APP_IMAGE_TWITTER"
+
             chmod 600 .env.production
 
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
-            PREVIOUS_IMAGE="$(docker inspect --format='{{.Config.Image}}' nextjs_app_prod 2>/dev/null || true)"
-
-            if [ -z "$APP_IMAGE" ]; then
-              echo "APP_IMAGE is empty. computed image tag was not available in deploy step."
-              exit 1
-            fi
-            export APP_IMAGE="$APP_IMAGE"
-            echo "Deploying image: $APP_IMAGE"
-
-            docker compose -f docker-compose.vps.yml --env-file .env.production pull
-            docker compose -f docker-compose.vps.yml --env-file .env.production up -d --remove-orphans
-
-            echo "Waiting for nextjs container to start before seeding..."
-            NEXTJS_UP=0
-            for i in $(seq 1 24); do
-              STATE="$(docker inspect --format='{{.State.Status}}' nextjs_app_prod 2>/dev/null || true)"
-              if [ "$STATE" = "running" ]; then
-                NEXTJS_UP=1
-                break
-              fi
-              sleep 5
-            done
-
-            if [ "$NEXTJS_UP" -ne 1 ]; then
-              echo "nextjs container did not start in time, seeding skipped"
-              exit 1
-            fi
-
-            echo "Seeding production database..."
-            docker compose -f docker-compose.vps.yml --env-file .env.production exec -T nextjs npm run seed
-            echo "Production seed completed."
+            docker compose -f docker-compose.vps.yml --env-file .env.production pull nextjs-twitter
+            docker compose -f docker-compose.vps.yml --env-file .env.production up -d nextjs-twitter
 
             DEPLOY_OK=0
             for i in $(seq 1 24); do
-              STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' nextjs_app_prod 2>/dev/null || true)"
+              STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' nextjs_twitter_prod 2>/dev/null || true)"
               if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "running" ]; then
                 DEPLOY_OK=1
                 break
@@ -224,14 +185,7 @@ jobs:
             done
 
             if [ "$DEPLOY_OK" -ne 1 ]; then
-              echo "Deploy healthcheck failed. Starting rollback..."
-              if [ -n "$PREVIOUS_IMAGE" ]; then
-                export APP_IMAGE="$PREVIOUS_IMAGE"
-                docker compose -f docker-compose.vps.yml --env-file .env.production up -d --remove-orphans
-                echo "Rollback completed to image: $PREVIOUS_IMAGE"
-              else
-                echo "No previous image found, rollback skipped."
-              fi
+              echo "Deploy healthcheck failed."
               exit 1
             fi
 
