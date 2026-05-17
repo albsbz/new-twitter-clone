@@ -121,6 +121,7 @@ jobs:
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+          DOMAIN_TWITTER: ${{ secrets.DOMAIN_TWITTER }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
@@ -133,11 +134,16 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
+          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN_TWITTER,MONGODB_URI,JWT_SECRET,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
           script: |
             set -e
 
             cd "$VPS_APP_DIR"
+
+            if [ -z "$DOMAIN_TWITTER" ]; then
+              echo "DOMAIN_TWITTER is empty. Set the secret in the twitter repository."
+              exit 1
+            fi
 
             if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
               echo "docker-compose.vps.yml or Caddyfile not found in VPS_APP_DIR. Run infra deploy first."
@@ -148,8 +154,8 @@ jobs:
             if [ ! -f .env.production ]; then
               umask 077
               cat > .env.production <<EOF
-DOMAIN_TWITTER=${DOMAIN_TWITTER}
-EOF
+            DOMAIN_TWITTER=${DOMAIN_TWITTER}
+            EOF
               chmod 600 .env.production
               echo ".env.production created with DOMAIN_TWITTER from secrets."
             fi
@@ -164,6 +170,7 @@ EOF
               fi
             }
 
+            update_env DOMAIN_TWITTER "$DOMAIN_TWITTER"
             update_env APP_IMAGE_TWITTER "$APP_IMAGE_TWITTER"
 
             chmod 600 .env.production
