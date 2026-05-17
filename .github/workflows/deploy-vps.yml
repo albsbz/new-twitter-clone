@@ -195,8 +195,26 @@ jobs:
 
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
+            # Ensure existing mongo container is available for the app.
+            if docker inspect mongodb_prod >/dev/null 2>&1; then
+              MONGO_STATE="$(docker inspect --format='{{.State.Status}}' mongodb_prod 2>/dev/null || true)"
+              if [ "$MONGO_STATE" != "running" ]; then
+                docker start mongodb_prod >/dev/null
+                echo "mongodb_prod started."
+              fi
+            else
+              echo "mongodb_prod container not found on VPS. Bootstrap shared stack first (infra deploy + initial stack up)."
+              exit 1
+            fi
+
             docker compose -f docker-compose.vps.yml --env-file .env.production pull nextjs-twitter
             docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps nextjs-twitter
+
+            # If mongo exists from an older stack/project, ensure it is connected to twitter's network.
+            APP_NET="$(docker inspect --format='{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s\n" $k}}{{end}}' nextjs_twitter_prod 2>/dev/null | head -n 1)"
+            if [ -n "$APP_NET" ]; then
+              docker network connect "$APP_NET" mongodb_prod >/dev/null 2>&1 || true
+            fi
 
             DEPLOY_OK=0
             for i in $(seq 1 36); do
@@ -214,6 +232,10 @@ jobs:
               docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}} exit={{.State.ExitCode}} restarting={{.State.Restarting}}' nextjs_twitter_prod || true
               echo "Recent container logs:"
               docker logs --tail 120 nextjs_twitter_prod || true
+              echo "Mongo container state:"
+              docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}} exit={{.State.ExitCode}} restarting={{.State.Restarting}}' mongodb_prod || true
+              echo "Mongo networks:"
+              docker inspect --format='{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s\n" $k}}{{end}}' mongodb_prod || true
               exit 1
             fi
 
