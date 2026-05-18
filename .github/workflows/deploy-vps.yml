@@ -150,12 +150,20 @@ jobs:
               echo "MONGODB_URI or JWT_SECRET is empty. Set required secrets in the twitter repository."
               exit 1
             fi
+            if [ -z "$MONGO_INITDB_ROOT_USERNAME" ] || [ -z "$MONGO_INITDB_ROOT_PASSWORD" ]; then
+              echo "MONGO_INITDB_ROOT_USERNAME or MONGO_INITDB_ROOT_PASSWORD is empty. Set required Mongo root secrets in the twitter repository."
+              exit 1
+            fi
 
             MONGODB_URI_EFFECTIVE="$MONGODB_URI"
             if echo "$MONGODB_URI_EFFECTIVE" | grep -Eq 'mongodb://([^@/]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/'; then
               MONGODB_URI_EFFECTIVE="$(echo "$MONGODB_URI_EFFECTIVE" | sed -E 's#(mongodb://([^@/]+@)?)(localhost|127\.0\.0\.1)(:[0-9]+)?/#\1mongodb_prod\4/#')"
               echo "MONGODB_URI host normalized to mongodb_prod for container networking."
             fi
+
+            # Always derive runtime URI from Mongo root secrets to avoid stale URI credentials.
+            MONGODB_URI_EFFECTIVE="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb_prod:27017/admin?authSource=admin"
+            MONGO_CHECK_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/admin?authSource=admin"
 
             if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
               echo "docker-compose.vps.yml or Caddyfile not found in VPS_APP_DIR. Run infra deploy first."
@@ -204,6 +212,14 @@ jobs:
               fi
             else
               echo "mongodb_prod container not found on VPS. Bootstrap shared stack first (infra deploy + initial stack up)."
+              exit 1
+            fi
+
+            # Validate Mongo auth before deploying app container.
+            if ! docker exec mongodb_prod mongosh "$MONGO_CHECK_URI" --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; then
+              echo "Mongo authentication check failed. Existing Mongo data volume may use different credentials than current secrets."
+              echo "Recent Mongo logs:"
+              docker logs --tail 120 mongodb_prod || true
               exit 1
             fi
 
