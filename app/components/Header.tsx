@@ -27,7 +27,7 @@ function Header() {
         <Link href="/tweets/new" className="hover:underline">
           Post a tweet
         </Link>
-        <Link href="/trending" className="hover:underline">
+        <Link href="/" className="hover:underline">
           Trending
         </Link>
         <Link href="/profile" className="hover:underline">
@@ -49,7 +49,7 @@ function Header() {
           <Link href="/tweets/new" className="block hover:underline">
             Post a tweet
           </Link>
-          <Link href="/trending" className="block hover:underline">
+          <Link href="/" className="block hover:underline">
             Trending
           </Link>
           <Link href="/profile" className="block hover:underline">
