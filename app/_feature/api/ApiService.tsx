@@ -1,6 +1,29 @@
 import Logger from "@/app/_utils/logger";
 import { publicEnv } from "@/app/lib/env";
 
+const normalizeApiBaseUrl = (baseUrl: string): string => {
+  const trimmedBaseUrl = baseUrl.trim();
+
+  if (trimmedBaseUrl.startsWith("/")) {
+    return `${trimmedBaseUrl.replace(/\/+$/, "")}/api`;
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedBaseUrl);
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return `${trimmedBaseUrl.replace(/\/+$/, "")}/api`;
+    }
+  } catch {
+    // Ignore invalid URLs and use the safe fallback below.
+  }
+
+  Logger.error(
+    "Invalid NEXT_PUBLIC_BASIC_URL for HTTP requests, falling back to same-origin /api",
+    trimmedBaseUrl,
+  );
+  return "/api";
+};
+
 class ApiService {
   private basicUrl: string;
   private apiUrl: string;
@@ -122,5 +145,5 @@ if (!publicEnv.NEXT_PUBLIC_BASIC_URL) {
 }
 export default new ApiService({
   basicUrl: publicEnv.NEXT_PUBLIC_EXTERNAL_URL,
-  apiUrl: `${publicEnv.NEXT_PUBLIC_BASIC_URL}/api`,
+  apiUrl: normalizeApiBaseUrl(publicEnv.NEXT_PUBLIC_BASIC_URL),
 });
