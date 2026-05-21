@@ -69,7 +69,6 @@ class PostController extends BaseController<PostEntity> {
       return posts;
     } catch (error) {
       Logger.error("Error fetching posts:", error);
-      console.error("Error fetching posts:", error);
       throw new Error("Failed to fetch posts");
     }
   }
@@ -83,7 +82,6 @@ class PostController extends BaseController<PostEntity> {
       return reactions;
     } catch (error) {
       Logger.error("Error fetching reactions:", error);
-      console.error("Error fetching reactions:", error);
       return { likedPosts: [], dislikedPosts: [] };
     }
   }
