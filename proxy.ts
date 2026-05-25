@@ -13,5 +13,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/tweets/new"],
+  matcher: ["/tweets/new", "/profile"],
 };
