@@ -5,7 +5,7 @@ import { connection } from "next/server";
 async function TweetPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await params;
-  const post = await postController.getOne(id);
+  const post = await postController.getOneWithComments(id);
   return <TweetCard tweet={post} />;
 }
 

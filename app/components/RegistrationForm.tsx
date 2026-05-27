@@ -7,14 +7,14 @@ import Logger from "../_utils/logger";
 function RegistrationForm() {
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
-    e: React.SubmitEvent<HTMLFormElement>,
+    formData: FormData,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => {
     setResponseError(null);
     const { message, error, status, success } = await ApiService.post({
       endpoint: "auth/registration",
       api: true,
-      formData: e.currentTarget,
+      formData,
     });
 
     if (success) {

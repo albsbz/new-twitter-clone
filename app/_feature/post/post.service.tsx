@@ -1,7 +1,6 @@
 import BaseService from "@/app/_common/base.service";
 import { PostEntity } from "./types/PostEntity.interface";
 import PostResponseDto from "./types/PostResponseDto.type";
-import ApiService from "../api/ApiService";
 import AllPostsResponseDto from "./types/AllPostsResponseDto.type";
 import Post from "./db/post.model";
 import Logger from "@/app/_utils/logger";
@@ -45,6 +44,7 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
                       date: "$$tag.date",
                     },
                   },
+                  
                 },
               },
             },

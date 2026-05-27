@@ -7,7 +7,7 @@ import { useNotificationState } from "@/app/lib/store";
 function NewTweet() {
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
-    e: React.SubmitEvent<HTMLFormElement>,
+    formData: FormData,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => {
     setResponseError(null);
@@ -15,7 +15,7 @@ function NewTweet() {
       const { error } = await ApiService.post({
         endpoint: "post",
         api: true,
-        formData: e.currentTarget,
+        formData,
       });
       if (error) {
         setResponseError(error);

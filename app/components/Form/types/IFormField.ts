@@ -3,6 +3,7 @@ type IFormField = {
   type: string;
   placeholder: string;
   title: string;
+  value?: string;
 };
 
 export default IFormField;

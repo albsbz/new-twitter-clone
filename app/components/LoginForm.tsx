@@ -8,7 +8,7 @@ function LoginForm() {
   const { addNotification } = useNotificationState();
   const { logIn } = useUserState();
   const handleSubmit = async (
-    e: React.SubmitEvent<HTMLFormElement>,
+    formData: FormData,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => {
     setResponseError(null);
@@ -16,7 +16,7 @@ function LoginForm() {
       const { data, message, error, status, success } = await ApiService.post({
         endpoint: "auth/login",
         api: true,
-        formData: e.currentTarget,
+        formData,
       });
 
       if (success) {

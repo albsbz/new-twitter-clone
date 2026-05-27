@@ -60,6 +60,9 @@ function FormInput({ type, field }: { type: string; field: IFormField }) {
       </div>
     );
   }
+  if (type === "extra") {
+    return;
+  }
   if (type === "text" || type === "email" || type === "password") {
     return (
       <input

@@ -20,6 +20,17 @@ class AuthController extends BaseController<{}> {
     this.userService = userService;
   }
 
+  async getUserIdFromAuth() {
+    let userId;
+    try {
+      const data = await this.checkAuth();
+      userId = data.id;
+    } catch (error) {
+      Logger.error("Error checking authentication:", error);
+    }
+    return userId;
+  }
+
   async checkAuth() {
     const { JWT_SECRET } = getServerEnv();
     const cookieStore = await cookies();
@@ -90,6 +101,16 @@ class AuthController extends BaseController<{}> {
     }
   }
 
+  async sendVerificationEmail(userId: string, email: string) {
+    const { JWT_SECRET } = getServerEnv();
+    const emailVerificationToken = jwt.sign({ userId }, JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    sendVerificationEmail(email, emailVerificationToken).catch((err) => {
+      Logger.error("Error sending verification email:", err);
+    });
+  }
+
   async registration(formData: RegistrationDto) {
     const { success, data, error } = User.safeParse(formData);
     Logger.log("Parsed data:", { success, data, error });
@@ -117,19 +138,10 @@ class AuthController extends BaseController<{}> {
           isVerified: false,
           likedPosts: [],
           dislikedPosts: [],
+          verificationEmailSendAt: new Date(),
         });
 
-        const { JWT_SECRET } = getServerEnv();
-        const emailVerificationToken = jwt.sign(
-          { userId: newUser.id },
-          JWT_SECRET,
-          { expiresIn: "24h" },
-        );
-        sendVerificationEmail(newUser.email, emailVerificationToken).catch(
-          (err) => {
-            Logger.error("Error sending verification email:", err);
-          },
-        );
+        this.sendVerificationEmail(newUser.id, newUser.email);
 
         return this.formResponse({
           message: "User registered successfully",

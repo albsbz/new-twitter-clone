@@ -6,36 +6,30 @@ import Post, { CreatePostDto } from "./types/CreatePostDto";
 import AuthController from "../auth/auth.controller";
 import Logger from "@/app/_utils/logger";
 import { ReactPostDto, ReactPostSchema } from "./types/ReactPostDto";
+import CommentService from "../comment/comment.service";
 
 class PostController extends BaseController<PostEntity> {
   private postService: PostService;
   private authController: AuthController;
   private userService: UserService;
+  private commentService: CommentService;
 
   constructor({
     postService,
     authController,
     userService,
+    commentService,
   }: {
     postService: PostService;
     authController: AuthController;
     userService: UserService;
+    commentService: CommentService;
   }) {
     super();
     this.postService = postService;
     this.authController = authController;
     this.userService = userService;
-  }
-
-  private async getUserIdFromAuth() {
-    let userId;
-    try {
-      const data = await this.authController.checkAuth();
-      userId = data.id;
-    } catch (error) {
-      Logger.error("Error checking authentication:", error);
-    }
-    return userId;
+    this.commentService = commentService;
   }
 
   async getOne(id: string) {
@@ -44,7 +38,7 @@ class PostController extends BaseController<PostEntity> {
       if (!post) {
         throw new Error("Post not found");
       }
-      const userId = await this.getUserIdFromAuth();
+      const userId = await this.authController.getUserIdFromAuth();
       if (!userId) {
         return post;
       }
@@ -63,6 +57,19 @@ class PostController extends BaseController<PostEntity> {
     }
   }
 
+  async getOneWithComments(id: string) {
+    try {
+      const [post, comments] = await Promise.all([
+        this.getOne(id),
+        this.commentService.findByPostId(id),
+      ]);
+      return { ...post, comments };
+    } catch (error) {
+      Logger.error("Error fetching post:", error);
+      throw new Error("Failed to fetch post");
+    }
+  }
+
   async getAll() {
     try {
       const { posts } = await this.postService.findAll();
@@ -74,7 +81,7 @@ class PostController extends BaseController<PostEntity> {
   }
   async getReactions() {
     try {
-      const userId = await this.getUserIdFromAuth();
+      const userId = await this.authController.getUserIdFromAuth();
       if (!userId) {
         return { likedPosts: [], dislikedPosts: [] };
       }
@@ -87,7 +94,7 @@ class PostController extends BaseController<PostEntity> {
   }
 
   async create(formData: CreatePostDto) {
-    const userId = await this.getUserIdFromAuth();
+    const userId = await this.authController.getUserIdFromAuth();
     const { success, data, error } = this.validate<CreatePostDto>({
       data: formData,
       schema: Post,
@@ -204,7 +211,7 @@ class PostController extends BaseController<PostEntity> {
     }
 
     try {
-      const userId = await this.getUserIdFromAuth();
+      const userId = await this.authController.getUserIdFromAuth();
       if (!userId) {
         return this.formResponse({
           message: "Authentication required",

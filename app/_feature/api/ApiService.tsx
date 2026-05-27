@@ -79,7 +79,7 @@ class ApiService {
   }: {
     params?: any;
     body?: any;
-    formData?: HTMLFormElement;
+    formData?: FormData;
     endpoint: string;
     api?: boolean;
     basicUrl?: string;
@@ -100,7 +100,7 @@ class ApiService {
       body: requestBody,
     };
     if (formData) {
-      init.body = new FormData(formData);
+      init.body = formData;
     }
     if (!formData) {
       init.headers = {

@@ -1,0 +1,80 @@
+import Form from "./Form";
+import {
+  CommentSchema,
+  CreateCommentDto,
+} from "../_feature/comment/types/CreateCommentDto";
+import ApiService from "../_feature/api/ApiService";
+import { useNotificationState } from "../lib/store";
+import { CommentsResponseDto } from "../_feature/comment/types/CommentsResponseDto";
+function CommentsSection({
+  postId,
+  comments,
+}: {
+  postId: CreateCommentDto["postId"];
+  comments: CommentsResponseDto[];
+}) {
+  const { addNotification } = useNotificationState();
+  const handleSubmit = async (
+    formData: FormData,
+    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+  ) => {
+    setResponseError(null);
+    try {
+      const { error } = await ApiService.post({
+        endpoint: "comment",
+        api: true,
+        formData: formData,
+      });
+      if (error) {
+        setResponseError(error);
+      } else {
+        addNotification({
+          message: "Post created successfully!",
+          type: "success",
+        });
+      }
+    } catch (err) {
+      addNotification({
+        type: "error",
+        message: "Failed to add comment. Please try again.",
+      });
+    }
+  };
+
+  return (
+    <section className="comments">
+      <div className="addComments">
+        <Form
+          handleSubmit={handleSubmit}
+          submitButtonText="Add comment"
+          validateSchema={CommentSchema}
+          fields={[
+            {
+              name: "body",
+              type: "textarea",
+              placeholder: "Add comment",
+              title: "comment:",
+            },
+            {
+              name: "postId",
+              type: "extra",
+              title: "",
+              placeholder: "",
+              value: postId,
+            },
+          ]}
+        ></Form>
+      </div>
+      <div className="commentsList">
+        {comments.map((comment) => (
+          <div key={comment.id} className="comment">
+            <p>{comment.body}</p>
+            <span className="commentAuthor">- {comment.authorId}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default CommentsSection;

@@ -5,6 +5,12 @@ import z from "zod";
 import IFormField from "./types/IFormField";
 import FormInput from "./FormInput";
 
+function getFormData(object: { [key: string]: any }) {
+    const formData = new FormData();
+    Object.keys(object).forEach(key => formData.append(key, object[key]));
+    return formData;
+}
+
 function Form({
   handleSubmit,
   fields,
@@ -12,7 +18,7 @@ function Form({
   validateSchema,
 }: {
   handleSubmit: (
-    e: React.SubmitEvent<HTMLFormElement>,
+    formData: FormData,
     setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
   ) => void;
   submitButtonText?: string;
@@ -38,11 +44,22 @@ function Form({
   };
   const validateAndSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = Object.fromEntries(new FormData(e.currentTarget));
+    let formData = Object.fromEntries(new FormData(e.currentTarget));
+    const extraValues = fields.filter(
+      (v) => v.type === "extra" && v.value !== undefined,
+    );
+    if (extraValues.length) {
+      formData = {
+        ...formData,
+        ...Object.fromEntries(
+          extraValues.map((v) => [v.name, v.value as FormDataEntryValue]),
+        ),
+      };
+    }
     if (!validate(formData)) {
       return;
     }
-    handleSubmit(e, (responseErrors) => {
+    handleSubmit(getFormData(formData), (responseErrors) => {
       if (!responseErrors) {
         setFormErrors({});
         return;
