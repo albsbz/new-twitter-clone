@@ -1,13 +1,13 @@
 import z from "zod";
 
-const CommentSchema = {
+const CommentShape = {
   body: z.string().min(5, "Minimum 5 characters required for body"),
   postId: z.string().min(1, "Post ID is required"),
 };
-const Comment = z.object(CommentSchema);
+const CommentSchema = z.object(CommentShape);
 
-type CreateCommentDto = z.infer<typeof Comment>;
+type CreateCommentDto = z.infer<typeof CommentSchema>;
 
-export default Comment;
-export { CommentSchema };
+export default CommentSchema;
+export { CommentShape };
 export type { CreateCommentDto };

@@ -1,6 +1,6 @@
 import Form from "./Form";
 import {
-  CommentSchema,
+  CommentShape,
   CreateCommentDto,
 } from "../_feature/comment/types/CreateCommentDto";
 import ApiService from "../_feature/api/ApiService";
@@ -29,7 +29,7 @@ function CommentsSection({
         setResponseError(error);
       } else {
         addNotification({
-          message: "Post created successfully!",
+          message: "Comment added successfully!",
           type: "success",
         });
       }
@@ -47,7 +47,7 @@ function CommentsSection({
         <Form
           handleSubmit={handleSubmit}
           submitButtonText="Add comment"
-          validateSchema={CommentSchema}
+          validateSchema={CommentShape}
           fields={[
             {
               name: "body",

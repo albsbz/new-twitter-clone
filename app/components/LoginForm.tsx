@@ -3,6 +3,7 @@ import { UserSchema } from "@/app/_feature/auth/types/RegistrationDto";
 import Form from "@/app/components/Form";
 import { useNotificationState, useUserState } from "@/app/lib/store";
 import Logger from "../_utils/logger";
+import Link from "next/link";
 
 function LoginForm() {
   const { addNotification } = useNotificationState();
@@ -72,6 +73,9 @@ function LoginForm() {
           },
         ]}
       />
+      <Link href="/reset-password" className="text-blue-500 hover:underline">
+        Forgot Password?
+      </Link>
     </div>
   );
 }
