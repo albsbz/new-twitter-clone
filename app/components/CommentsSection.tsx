@@ -34,6 +34,7 @@ function CommentsSection({
         });
       }
     } catch (err) {
+      
       addNotification({
         type: "error",
         message: "Failed to add comment. Please try again.",
@@ -69,7 +70,7 @@ function CommentsSection({
         {comments.map((comment) => (
           <div key={comment.id} className="comment">
             <p>{comment.body}</p>
-            <span className="commentAuthor">- {comment.authorId}</span>
+            <span className="commentAuthor">- {comment.authorName}</span>
           </div>
         ))}
       </div>

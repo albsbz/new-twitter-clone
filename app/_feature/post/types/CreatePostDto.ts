@@ -1,14 +1,14 @@
 import z from "zod";
 
-const PostSchema = {
+const PostShape = {
   title: z.string().min(5, "Minimum 5 characters required for title"),
   body: z.string().min(5, "Minimum 5 characters required for body"),
   tags: z.array(z.string()).optional(),
 };
-const Post = z.object(PostSchema);
+const PostSchema = z.object(PostShape);
 
-type CreatePostDto = z.infer<typeof Post>;
+type CreatePostDto = z.infer<typeof PostSchema>;
 
-export default Post;
-export { PostSchema };
+export default PostSchema;
+export { PostShape };
 export type { CreatePostDto };

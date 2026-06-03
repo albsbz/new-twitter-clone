@@ -71,6 +71,7 @@ function FormInput({ type, field }: { type: string; field: IFormField }) {
         type={field.type}
         className="border p-2 rounded"
         placeholder={field.placeholder}
+        autoComplete={field.autoComplete ? "on" : "off"}
       />
     );
   }

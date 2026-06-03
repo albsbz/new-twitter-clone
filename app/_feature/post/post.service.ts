@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(
-    limit: number = 10,
+    limit: number = 12,
     skip: number = 0,
   ): Promise<AllPostsResponseDto> {
     await this.connect();
@@ -44,7 +44,6 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
                       date: "$$tag.date",
                     },
                   },
-                  
                 },
               },
             },

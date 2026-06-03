@@ -50,6 +50,16 @@ class CommentController extends BaseController<CommentEntity> {
       });
     }
     try {
+      const userName = await this.userService
+        .findById(userId)
+        .then((user) => user?.name);
+      if (!userName) {
+        return this.formResponse({
+          message: "User should set a username before commenting",
+          error: "User has no username set",
+          status: 404,
+        });
+      }
       const newComment = await this.commentService.create({
         ...data,
         authorId: userId,
@@ -61,9 +71,9 @@ class CommentController extends BaseController<CommentEntity> {
         status: 201,
       });
     } catch (error) {
-      Logger.error("Error creating post:", error);
+      Logger.error("Error creating comment:", error);
       return this.formResponse({
-        message: "Failed to create post",
+        message: "Failed to create comment",
         error: error instanceof Error ? error.message : "Unknown error",
         status: 500,
       });

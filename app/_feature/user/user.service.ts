@@ -57,6 +57,28 @@ class UserService extends BaseService {
     }
   }
 
+  async updateName({
+    userId,
+    newName,
+  }: {
+    userId: UserEntity["id"];
+    newName: string;
+  }) {
+    await this.connect();
+    try {
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
+        { name: newName },
+        { returnDocument: "after" },
+      ).select({ password: 0 });
+      Logger.log("Updated user name:", user);
+      return user;
+    } catch (error) {
+      Logger.error("Failed to update user name:", error);
+      throw error;
+    }
+  }
+
   async findByEmail(email: UserEntity["email"]): Promise<UserEntity | null> {
     await this.connect();
     try {

@@ -32,7 +32,9 @@ class CommentService extends BaseService<{}, {}> {
     await this.connect();
     const comments = await Comment.find({
       postId: new mongoose.Types.ObjectId(postId),
-    }).lean();
+    })
+      .populate("authorId", "name")
+      .lean();
 
     return comments.map((comment) => {
       const { _id, postId, authorId, ...rest } = comment;
@@ -40,7 +42,8 @@ class CommentService extends BaseService<{}, {}> {
         ...rest,
         id: _id.toString(),
         postId: postId.toString(),
-        authorId: authorId.toString(),
+        authorId: authorId._id.toString(),
+        authorName: authorId.name,
       };
     });
   }

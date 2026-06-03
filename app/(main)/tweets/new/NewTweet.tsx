@@ -1,6 +1,6 @@
 "use client";
 import Form from "@/app/components/Form";
-import { PostSchema } from "@/app/_feature/post/types/CreatePostDto";
+import { PostShape } from "@/app/_feature/post/types/CreatePostDto";
 import ApiService from "@/app/_feature/api/ApiService";
 import { useNotificationState } from "@/app/lib/store";
 
@@ -37,7 +37,7 @@ function NewTweet() {
       <h2 className="flex justify-center">NewTweet</h2>
       <Form
         handleSubmit={handleSubmit}
-        validateSchema={PostSchema}
+        validateSchema={PostShape}
         fields={[
           {
             name: "title",

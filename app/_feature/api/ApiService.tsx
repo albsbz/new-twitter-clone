@@ -134,7 +134,74 @@ class ApiService {
       throw error;
     }
   }
+
+  async patch({
+    params,
+    body,
+    formData,
+    endpoint,
+    api = false,
+    basicUrl = this.basicUrl,
+  }: {
+    params?: any;
+    body?: any;
+    formData?: FormData;
+    endpoint: string;
+    api?: boolean;
+    basicUrl?: string;
+  }) {
+    Logger.log("API PATCH request parameters:", {
+      params,
+      body,
+      formData: formData ? "Provided" : "Not provided",
+      endpoint,
+      api,
+      basicUrl,
+    });
+    const url = this.constructURL({ endpoint, api, basicUrl });
+    const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
+    const init: RequestInit = {
+      ...this.init,
+      method: "PATCH",
+      body: requestBody,
+    };
+    if (formData) {
+      init.body = formData;
+    }
+    if (!formData) {
+      init.headers = {
+        "Content-Type": "application/json",
+        ...init.headers,
+      };
+    }
+    try {
+      const response = await fetch(url, init);
+      if (!response.ok) {
+        const errorText = await response.text();
+        Logger.error(
+          "API PATCH request failed with status:",
+          response.status,
+          "and response:",
+          errorText,
+        );
+        throw new Error(
+          `HTTP error! status: ${response.status}, response: ${errorText}`,
+        );
+      }
+      const { data, ...rest } = await response.json();
+      return {
+        data,
+        ...rest,
+        status: response.status,
+        success: response.ok,
+      };
+    } catch (error) {
+      Logger.error("API PATCH request failed:", error);
+      throw error;
+    }
+  }
 }
+
 if (!publicEnv.NEXT_PUBLIC_EXTERNAL_URL) {
   throw new Error(
     "NEXT_PUBLIC_EXTERNAL_URL environment variable is not defined",
