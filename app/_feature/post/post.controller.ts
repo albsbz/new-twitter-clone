@@ -104,14 +104,13 @@ class PostController extends BaseController<PostEntity> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
     }
     if (!userId) {
       return this.formResponse({
-        message: "Authentication required",
-        error: "User must be authenticated to create a post",
+        message: "User must be authenticated to create a post",
         status: 401,
       });
     }
@@ -195,7 +194,6 @@ class PostController extends BaseController<PostEntity> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: "Invalid request data",
         status: 400,
       });
     }
@@ -205,7 +203,6 @@ class PostController extends BaseController<PostEntity> {
     if (isLike === undefined && isDislike === undefined) {
       return this.formResponse({
         message: "Validation failed",
-        error: "isLike or isDislike fields are required",
         status: 400,
       });
     }
@@ -215,7 +212,6 @@ class PostController extends BaseController<PostEntity> {
       if (!userId) {
         return this.formResponse({
           message: "Authentication required",
-          error: "User must be authenticated to like a post",
           status: 401,
         });
       }

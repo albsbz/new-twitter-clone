@@ -32,7 +32,6 @@ class CommentController extends BaseController<CommentEntity> {
     if (!userId) {
       return this.formResponse({
         message: "Authentication required",
-        error: "User must be authenticated to create a comment",
         status: 401,
       });
     }
@@ -45,7 +44,7 @@ class CommentController extends BaseController<CommentEntity> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
     }
@@ -56,7 +55,6 @@ class CommentController extends BaseController<CommentEntity> {
       if (!userName) {
         return this.formResponse({
           message: "User should set a username before commenting",
-          error: "User has no username set",
           status: 404,
         });
       }

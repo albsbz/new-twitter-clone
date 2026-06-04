@@ -7,6 +7,7 @@ import ApiService from "../_feature/api/ApiService";
 import { useNotificationState } from "../lib/store";
 import { CommentsResponseDto } from "../_feature/comment/types/CommentsResponseDto";
 import { ApiHttpError } from "../_feature/api/ApiHttpError";
+import z from "zod";
 
 function CommentsSection({
   postId,
@@ -18,7 +19,9 @@ function CommentsSection({
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
     formData: FormData,
-    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+    setResponseError: React.Dispatch<
+      React.SetStateAction<string | z.core.$ZodIssue[] | null>
+    >,
   ) => {
     setResponseError(null);
     try {
@@ -43,7 +46,6 @@ function CommentsSection({
         });
         return;
       }
-      console.log("1Failed to add comment:", err);
       addNotification({
         type: "error",
         message: "Failed to add comment. Please try again.",

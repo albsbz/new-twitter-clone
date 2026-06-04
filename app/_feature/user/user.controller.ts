@@ -30,35 +30,35 @@ class UserController extends BaseController<{}> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
-    } 
-	const userId = await this.authController.getUserIdFromAuth();
-	if (!userId) {
-	  return this.formResponse({
-		message: "Unauthorized",
-		status: 401,
-	  });
-	}
-	try {
-	  const updatedUser = await this.userService.updateName({
-		userId,
-		newName: data.username,
-	  });
-	  return this.formResponse({
-		message: "Username updated successfully",
-		data: updatedUser,
-		status: 200,
-	  });
-	} catch (error) {
-	  Logger.error("Error updating username:", error);
-	  return this.formResponse({
-		message: "Failed to update username",
-		error: "An error occurred while updating the username",
-		status: 500,
-	  });
-	}	
+    }
+    const userId = await this.authController.getUserIdFromAuth();
+    if (!userId) {
+      return this.formResponse({
+        message: "Unauthorized",
+        status: 401,
+      });
+    }
+    try {
+      const updatedUser = await this.userService.updateName({
+        userId,
+        newName: data.username,
+      });
+      return this.formResponse({
+        message: "Username updated successfully",
+        data: updatedUser,
+        status: 200,
+      });
+    } catch (error) {
+      Logger.error("Error updating username:", error);
+      return this.formResponse({
+        message: "Failed to update username",
+        error: error instanceof Error ? error.message : "Unknown error",
+        status: 500,
+      });
+    }
   }
 }
 export default UserController;

@@ -1,13 +1,13 @@
-export type ApiErrorCause = {
+export type ApiErrorCause<T = unknown> = {
   status: number;
   message: string;
-  error?: unknown;
+  error?: T;
 };
 
-export class ApiHttpError extends Error {
-  declare cause: ApiErrorCause;
+export class ApiHttpError<T> extends Error {
+  declare cause: ApiErrorCause<T>;
 
-  constructor(cause: ApiErrorCause) {
+  constructor(cause: ApiErrorCause<T>) {
     super(`HTTP error! status: ${cause.status}, message: ${cause.message}`, {
       cause,
     });

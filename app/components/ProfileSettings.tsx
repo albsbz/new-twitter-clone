@@ -5,17 +5,16 @@ import UpdateUserProfileDto, {
 
 import ApiService from "../_feature/api/ApiService";
 import { useNotificationState } from "../lib/store";
+import z from "zod";
 
 function ProfileSettings() {
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
     formData: FormData,
-    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+    setResponseError: React.Dispatch<
+      React.SetStateAction<string | z.core.$ZodIssue[] | null>
+    >,
   ) => {
-    console.log(
-      "Submitting profile update with formData:",
-      Object.fromEntries(formData.entries()),
-    );
     setResponseError(null);
     try {
       const { error } = await ApiService.patch({

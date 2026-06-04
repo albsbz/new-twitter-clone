@@ -67,7 +67,7 @@ class AuthController extends BaseController<{}> {
       if (!validated.success) {
         return this.formResponse({
           message: "Validation failed",
-          error: JSON.stringify(validated.error.issues),
+          error: validated.error.issues,
           status: 400,
         });
       }
@@ -79,7 +79,6 @@ class AuthController extends BaseController<{}> {
       if (!decoded || !decoded.userId) {
         return this.formResponse({
           message: "Invalid token",
-          error: "Token verification failed",
           status: 400,
         });
       }
@@ -93,7 +92,6 @@ class AuthController extends BaseController<{}> {
       } else {
         return this.formResponse({
           message: "User not found",
-          error: "No user associated with this token",
           status: 404,
         });
       }
@@ -116,7 +114,7 @@ class AuthController extends BaseController<{}> {
       if (!validated.success) {
         return this.formResponse({
           message: "Validation failed",
-          error: JSON.stringify(validated.error.issues),
+          error: validated.error.issues,
           status: 400,
         });
       }
@@ -128,7 +126,6 @@ class AuthController extends BaseController<{}> {
       if (!decoded || !decoded.userId) {
         return this.formResponse({
           message: "Invalid token",
-          error: "Token verification failed",
           status: 400,
         });
       }
@@ -147,7 +144,6 @@ class AuthController extends BaseController<{}> {
       } else {
         return this.formResponse({
           message: "User not found",
-          error: "No user associated with this token",
           status: 404,
         });
       }
@@ -180,7 +176,7 @@ class AuthController extends BaseController<{}> {
       if (!validated.success) {
         return this.formResponse({
           message: "Validation failed",
-          error: JSON.stringify(validated.error.issues),
+          error: validated.error.issues,
           status: 400,
         });
       }
@@ -189,7 +185,6 @@ class AuthController extends BaseController<{}> {
       if (!user) {
         return this.formResponse({
           message: "User not found",
-          error: "No user associated with this email",
           status: 404,
         });
       }
@@ -220,7 +215,7 @@ class AuthController extends BaseController<{}> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
     } else {
@@ -229,7 +224,6 @@ class AuthController extends BaseController<{}> {
         if (existingUser) {
           return this.formResponse({
             message: "Email already in use",
-            error: "A user with this email already exists",
             status: 409,
           });
         }
@@ -280,7 +274,6 @@ class AuthController extends BaseController<{}> {
     } catch (error) {
       return this.formResponse({
         message: "No token provided",
-        error: "Unauthorized",
         status: 401,
       });
     }
@@ -292,7 +285,7 @@ class AuthController extends BaseController<{}> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
     } else {
@@ -301,7 +294,6 @@ class AuthController extends BaseController<{}> {
         if (!existingUser) {
           return this.formResponse({
             message: "Invalid email or password",
-            error: "Unauthorized",
             status: 401,
           });
         }
@@ -312,7 +304,6 @@ class AuthController extends BaseController<{}> {
         if (!passwordCompare) {
           return this.formResponse({
             message: "Invalid email or password",
-            error: "Unauthorized",
             status: 401,
           });
         }

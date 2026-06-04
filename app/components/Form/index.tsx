@@ -6,9 +6,9 @@ import IFormField from "./types/IFormField";
 import FormInput from "./FormInput";
 
 function getFormData(object: { [key: string]: any }) {
-    const formData = new FormData();
-    Object.keys(object).forEach(key => formData.append(key, object[key]));
-    return formData;
+  const formData = new FormData();
+  Object.keys(object).forEach((key) => formData.append(key, object[key]));
+  return formData;
 }
 
 function Form({
@@ -19,7 +19,9 @@ function Form({
 }: {
   handleSubmit: (
     formData: FormData,
-    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+    setResponseError: React.Dispatch<
+      React.SetStateAction<string | z.core.$ZodIssue[] | null>
+    >,
   ) => void;
   submitButtonText?: string;
   fields: IFormField[];
@@ -65,9 +67,8 @@ function Form({
         return;
       }
       const errors: { [key: string]: string } = {};
-
-      if (typeof responseErrors === "string") {
-        JSON.parse(responseErrors).forEach((err: any) => {
+      if (responseErrors instanceof Array) {
+        responseErrors.forEach((err: any) => {
           const fieldName = err.path[0] as string;
           errors[fieldName] = err.message;
         });
