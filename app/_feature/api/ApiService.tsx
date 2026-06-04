@@ -1,5 +1,6 @@
 import Logger from "@/app/_utils/logger";
 import { publicEnv } from "@/app/lib/env";
+import { ApiHttpError } from "./ApiHttpError";
 
 const normalizeApiBaseUrl = (baseUrl: string): string => {
   const trimmedBaseUrl = baseUrl.trim();
@@ -111,16 +112,20 @@ class ApiService {
     try {
       const response = await fetch(url, init);
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorData = await response.json();
         Logger.error(
           "API POST request failed with status:",
           response.status,
-          "and response:",
-          errorText,
+          "and message:",
+          errorData.message,
+          "error:",
+          errorData.error,
         );
-        throw new Error(
-          `HTTP error! status: ${response.status}, response: ${errorText}`,
-        );
+        throw new ApiHttpError({
+          status: response.status,
+          message: errorData.message,
+          error: errorData.error,
+        });
       }
       const { data, ...rest } = await response.json();
       return {

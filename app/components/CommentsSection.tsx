@@ -6,6 +6,8 @@ import {
 import ApiService from "../_feature/api/ApiService";
 import { useNotificationState } from "../lib/store";
 import { CommentsResponseDto } from "../_feature/comment/types/CommentsResponseDto";
+import { ApiHttpError } from "../_feature/api/ApiHttpError";
+
 function CommentsSection({
   postId,
   comments,
@@ -34,7 +36,14 @@ function CommentsSection({
         });
       }
     } catch (err) {
-      
+      if (err instanceof ApiHttpError) {
+        addNotification({
+          type: "error",
+          message: err.cause.message,
+        });
+        return;
+      }
+      console.log("1Failed to add comment:", err);
       addNotification({
         type: "error",
         message: "Failed to add comment. Please try again.",
