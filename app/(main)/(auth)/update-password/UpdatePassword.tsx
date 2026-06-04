@@ -1,11 +1,13 @@
 "use client";
 import ApiService from "@/app/_feature/api/ApiService";
+import { ApiHttpError } from "@/app/_feature/api/ApiHttpError";
 import UpdatePasswordSchema, {
   UpdatePasswordShape,
 } from "@/app/_feature/auth/types/UpdatePasswordDto";
 import Form from "@/app/components/Form";
 import { useNotificationState } from "@/app/lib/store";
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import z from "zod";
 
 function UpdatePassword() {
   const searchParams = useSearchParams();
@@ -18,32 +20,45 @@ function UpdatePassword() {
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
     formData: FormData,
-    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+    setResponseError: React.Dispatch<
+      React.SetStateAction<string | z.core.$ZodIssue[] | null>
+    >,
   ) => {
     setResponseError(null);
     if (formData.get("password") !== formData.get("confirmPassword")) {
-      setResponseError(
-        JSON.stringify([
-          { path: ["confirmPassword"], message: "Passwords do not match." },
-        ]),
-      );
+      setResponseError([
+        {
+          code: "custom",
+          path: ["confirmPassword"],
+          message: "Passwords do not match.",
+          input: formData.get("confirmPassword"),
+        } as z.core.$ZodIssue,
+      ]);
       return;
     }
     try {
-      const { error } = await ApiService.post({
+      await ApiService.post({
         endpoint: "auth/update-password",
         api: true,
         formData,
       });
-      if (error) {
-        setResponseError(error);
-      } else {
-        addNotification({
-          message: "Password updated successfully!",
-          type: "success",
-        });
-      }
+      addNotification({
+        message: "Password updated successfully!",
+        type: "success",
+      });
     } catch (err) {
+      if (err instanceof ApiHttpError) {
+        const responseError = err.cause.error;
+        if (Array.isArray(responseError)) {
+          setResponseError(responseError as z.core.$ZodIssue[]);
+          return;
+        }
+        addNotification({
+          type: "error",
+          message: err.cause.message,
+        });
+        return;
+      }
       addNotification({
         type: "error",
         message: "Failed to update password. Please try again.",

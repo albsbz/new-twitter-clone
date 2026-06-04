@@ -1,49 +1,53 @@
 import ApiService from "@/app/_feature/api/ApiService";
+import { ApiHttpError } from "@/app/_feature/api/ApiHttpError";
 import { UserSchema } from "@/app/_feature/auth/types/RegistrationDto";
 import Form from "@/app/components/Form";
 import { useNotificationState, useUserState } from "@/app/lib/store";
 import Logger from "../_utils/logger";
 import Link from "next/link";
+import z from "zod";
 
 function LoginForm() {
   const { addNotification } = useNotificationState();
   const { logIn } = useUserState();
   const handleSubmit = async (
     formData: FormData,
-    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+    setResponseError: React.Dispatch<
+      React.SetStateAction<string | z.core.$ZodIssue[] | null>
+    >,
   ) => {
     setResponseError(null);
     try {
-      const { data, message, error, status, success } = await ApiService.post({
+      const { data } = await ApiService.post({
         endpoint: "auth/login",
         api: true,
         formData,
       });
 
-      if (success) {
-        addNotification({ message: "Login successful!", type: "success" });
-        Logger.log("Login successful, response data:", data);
-        if (data?.id) {
-          logIn({ name: data?.name || null, id: data?.id });
-          return;
-        } else {
-          Logger.error("Login response missing token:", data);
-          addNotification({
-            message: "Login failed: Missing token in response",
-            type: "error",
-          });
-          return;
-        }
-      }
-      if (status === 401) {
-        Logger.log("Unauthorized error during login:", message);
-        addNotification({ message, type: "error" });
+      addNotification({ message: "Login successful!", type: "success" });
+      Logger.log("Login successful, response data:", data);
+      if (data?.id) {
+        logIn({ name: data?.name || null, id: data?.id });
         return;
       }
-      if (error) {
-        setResponseError(error);
-      }
+      Logger.error("Login response missing token:", data);
+      addNotification({
+        message: "Login failed: Missing token in response",
+        type: "error",
+      });
     } catch (err) {
+      if (err instanceof ApiHttpError) {
+        const responseError = err.cause.error;
+        if (Array.isArray(responseError)) {
+          setResponseError(responseError as z.core.$ZodIssue[]);
+          return;
+        }
+        addNotification({
+          message: err.cause.message,
+          type: "error",
+        });
+        return;
+      }
       Logger.error("Login request failed:", err);
       addNotification({
         message: "Login failed. Please try again.",

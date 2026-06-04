@@ -25,21 +25,22 @@ function CommentsSection({
   ) => {
     setResponseError(null);
     try {
-      const { error } = await ApiService.post({
+      await ApiService.post({
         endpoint: "comment",
         api: true,
         formData: formData,
       });
-      if (error) {
-        setResponseError(error);
-      } else {
-        addNotification({
-          message: "Comment added successfully!",
-          type: "success",
-        });
-      }
+      addNotification({
+        message: "Comment added successfully!",
+        type: "success",
+      });
     } catch (err) {
       if (err instanceof ApiHttpError) {
+        const responseError = err.cause.error;
+        if (Array.isArray(responseError)) {
+          setResponseError(responseError as z.core.$ZodIssue[]);
+          return;
+        }
         addNotification({
           type: "error",
           message: err.cause.message,

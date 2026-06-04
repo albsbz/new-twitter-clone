@@ -47,6 +47,54 @@ class ApiService {
     return api ? `${this.apiUrl}/${endpoint}` : `${basicUrl}/${endpoint}`;
   }
 
+  private async parseErrorResponse(response: Response) {
+    const fallbackMessage = `HTTP error! status: ${response.status}`;
+    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+
+    if (contentType.includes("application/json")) {
+      try {
+        const payload = (await response.json()) as {
+          message?: string;
+          error?: unknown;
+        };
+        return {
+          message: payload.message ?? fallbackMessage,
+          error: payload.error,
+        };
+      } catch {
+        // Fall back to text parsing below.
+      }
+    }
+
+    try {
+      const text = await response.text();
+      if (text) {
+        return { message: text, error: undefined };
+      }
+    } catch {
+      // Ignore body parsing errors and use fallback message.
+    }
+
+    return { message: fallbackMessage, error: undefined };
+  }
+
+  private async throwApiHttpError(response: Response, method: string): Promise<never> {
+    const { message, error } = await this.parseErrorResponse(response);
+    Logger.error(
+      `API ${method} request failed with status:`,
+      response.status,
+      "and message:",
+      message,
+      "error:",
+      error,
+    );
+    throw new ApiHttpError({
+      status: response.status,
+      message,
+      error,
+    });
+  }
+
   async get({
     endpoint,
     api = false,
@@ -61,7 +109,7 @@ class ApiService {
       let init = { ...this.init, method: "GET" };
       const response = await fetch(url, api ? init : undefined);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        await this.throwApiHttpError(response, "GET");
       }
       return await response.json();
     } catch (error) {
@@ -112,20 +160,7 @@ class ApiService {
     try {
       const response = await fetch(url, init);
       if (!response.ok) {
-        const errorData = await response.json();
-        Logger.error(
-          "API POST request failed with status:",
-          response.status,
-          "and message:",
-          errorData.message,
-          "error:",
-          errorData.error,
-        );
-        throw new ApiHttpError({
-          status: response.status,
-          message: errorData.message,
-          error: errorData.error,
-        });
+        await this.throwApiHttpError(response, "POST");
       }
       const { data, ...rest } = await response.json();
       return {
@@ -182,16 +217,7 @@ class ApiService {
     try {
       const response = await fetch(url, init);
       if (!response.ok) {
-        const errorText = await response.text();
-        Logger.error(
-          "API PATCH request failed with status:",
-          response.status,
-          "and response:",
-          errorText,
-        );
-        throw new Error(
-          `HTTP error! status: ${response.status}, response: ${errorText}`,
-        );
+        await this.throwApiHttpError(response, "PATCH");
       }
       const { data, ...rest } = await response.json();
       return {
