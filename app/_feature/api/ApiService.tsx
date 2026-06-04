@@ -49,7 +49,8 @@ class ApiService {
 
   private async parseErrorResponse(response: Response) {
     const fallbackMessage = `HTTP error! status: ${response.status}`;
-    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+    const contentType =
+      response.headers.get("content-type")?.toLowerCase() ?? "";
 
     if (contentType.includes("application/json")) {
       try {
@@ -78,7 +79,10 @@ class ApiService {
     return { message: fallbackMessage, error: undefined };
   }
 
-  private async throwApiHttpError(response: Response, method: string): Promise<never> {
+  private async throwApiHttpError(
+    response: Response,
+    method: string,
+  ): Promise<never> {
     const { message, error } = await this.parseErrorResponse(response);
     Logger.error(
       `API ${method} request failed with status:`,
