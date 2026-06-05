@@ -8,6 +8,7 @@ import { useNotificationState } from "../lib/store";
 import { CommentsResponseDto } from "../_feature/comment/types/CommentsResponseDto";
 import { ApiHttpError } from "../_feature/api/ApiHttpError";
 import z from "zod";
+import { useState } from "react";
 
 function CommentsSection({
   postId,
@@ -16,6 +17,8 @@ function CommentsSection({
   postId: CreateCommentDto["postId"];
   comments: CommentsResponseDto[];
 }) {
+  const [commentsList, setCommentsList] =
+    useState<CommentsResponseDto[]>(comments);
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
     formData: FormData,
@@ -25,11 +28,12 @@ function CommentsSection({
   ) => {
     setResponseError(null);
     try {
-      await ApiService.post({
+      const response = await ApiService.post({
         endpoint: "comment",
         api: true,
         formData: formData,
       });
+      setCommentsList((prevComments) => [...prevComments, response.data]);
       addNotification({
         message: "Comment added successfully!",
         type: "success",
@@ -56,6 +60,14 @@ function CommentsSection({
 
   return (
     <section className="comments">
+      <div className="commentsList">
+        {commentsList.map((comment) => (
+          <div key={comment.id} className="comment">
+            <p>{comment.body}</p>
+            <span className="commentAuthor">- {comment.authorName}</span>
+          </div>
+        ))}
+      </div>
       <div className="addComments">
         <Form
           handleSubmit={handleSubmit}
@@ -77,14 +89,6 @@ function CommentsSection({
             },
           ]}
         ></Form>
-      </div>
-      <div className="commentsList">
-        {comments.map((comment) => (
-          <div key={comment.id} className="comment">
-            <p>{comment.body}</p>
-            <span className="commentAuthor">- {comment.authorName}</span>
-          </div>
-        ))}
       </div>
     </section>
   );

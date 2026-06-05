@@ -1,10 +1,12 @@
 import ApiService from "../_feature/api/ApiService";
 import Logger from "../_utils/logger";
 import { useNotificationState, useUserState } from "../lib/store";
+import { useRouter } from "next/navigation";
 
 function useAuth() {
   const { addNotification } = useNotificationState();
   const { logIn, logOut } = useUserState();
+  const router = useRouter();
   const handleLogin = async ({ notification = true } = {}) => {
     try {
       const { data, message, error, status, success } = await ApiService.post({
@@ -39,7 +41,7 @@ function useAuth() {
         return;
       }
       if (error && notification) {
-          addNotification({ message: error, type: "error" });
+        addNotification({ message: error, type: "error" });
       }
     } catch (err) {
       Logger.error("Login request failed:", err);
@@ -62,6 +64,7 @@ function useAuth() {
       addNotification({ message: "Logout successful!", type: "success" });
       Logger.log("Logout successful, response data:", data);
       logOut();
+      router.push("/login");
       return;
     }
     if (status === 401) {

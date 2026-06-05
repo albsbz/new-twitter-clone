@@ -1,7 +1,15 @@
 import { useRef, useState } from "react";
 import IFormField from "./types/IFormField";
 
-function FormInput({ type, field }: { type: string; field: IFormField }) {
+function FormInput({
+  type,
+  field,
+  disabled,
+}: {
+  type: string;
+  field: IFormField;
+  disabled: boolean;
+}) {
   const [tags, setTags] = useState<string[]>([]);
   const tagContainerRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +49,7 @@ function FormInput({ type, field }: { type: string; field: IFormField }) {
         className="border p-2 rounded"
         placeholder={field.placeholder}
         rows={4}
+        disabled={disabled}
       ></textarea>
     );
   }
@@ -52,6 +61,7 @@ function FormInput({ type, field }: { type: string; field: IFormField }) {
           className="border p-2 rounded"
           placeholder={field.placeholder}
           onChange={particlesInputHandler}
+          disabled={disabled}
         />
         <div ref={tagContainerRef}></div>
         {tags.map((tag, idx) => (
@@ -72,6 +82,7 @@ function FormInput({ type, field }: { type: string; field: IFormField }) {
         className="border p-2 rounded"
         placeholder={field.placeholder}
         autoComplete={field.autoComplete ? "on" : "off"}
+        disabled={disabled}
       />
     );
   }

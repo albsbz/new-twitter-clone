@@ -6,10 +6,12 @@ import { useNotificationState, useUserState } from "@/app/lib/store";
 import Logger from "../_utils/logger";
 import Link from "next/link";
 import z from "zod";
+import { useRouter } from "next/navigation";
 
 function LoginForm() {
   const { addNotification } = useNotificationState();
   const { logIn } = useUserState();
+  const router = useRouter();
   const handleSubmit = async (
     formData: FormData,
     setResponseError: React.Dispatch<
@@ -28,6 +30,7 @@ function LoginForm() {
       Logger.log("Login successful, response data:", data);
       if (data?.id) {
         logIn({ name: data?.name || null, id: data?.id });
+        router.push("/");
         return;
       }
       Logger.error("Login response missing token:", data);
@@ -42,6 +45,7 @@ function LoginForm() {
           setResponseError(responseError as z.core.$ZodIssue[]);
           return;
         }
+        console.log("Login request failed with API error:", err.cause.message);
         addNotification({
           message: err.cause.message,
           type: "error",
@@ -56,7 +60,7 @@ function LoginForm() {
     }
   };
   return (
-    <div>
+    <div className="flex justify-center flex-col gap-6 items-center">
       <h2 className="flex justify-center">Login</h2>
       <Form
         handleSubmit={handleSubmit}

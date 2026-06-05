@@ -4,6 +4,7 @@ import React from "react";
 import z from "zod";
 import IFormField from "./types/IFormField";
 import FormInput from "./FormInput";
+import Spinner from "../Spinner";
 
 function getFormData(object: { [key: string]: any }) {
   const formData = new FormData();
@@ -22,7 +23,7 @@ function Form({
     setResponseError: React.Dispatch<
       React.SetStateAction<string | z.core.$ZodIssue[] | null>
     >,
-  ) => void;
+  ) => Promise<void>;
   submitButtonText?: string;
   fields: IFormField[];
   validateSchema: { [key: string]: z.ZodTypeAny };
@@ -30,6 +31,7 @@ function Form({
   const [formErrors, setFormErrors] = React.useState<{ [key: string]: string }>(
     {},
   );
+  const [loading, setLoading] = React.useState(false);
   const validate = (formData: { [key: string]: any }) => {
     const validatedData = z.object(validateSchema).safeParse(formData);
     if (!validatedData.success) {
@@ -44,8 +46,9 @@ function Form({
     setFormErrors({});
     return true;
   };
-  const validateAndSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const validateAndSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
     let formData = Object.fromEntries(new FormData(e.currentTarget));
     const extraValues = fields.filter(
       (v) => v.type === "extra" && v.value !== undefined,
@@ -59,9 +62,11 @@ function Form({
       };
     }
     if (!validate(formData)) {
+      setLoading(false);
       return;
     }
-    handleSubmit(getFormData(formData), (responseErrors) => {
+
+    await handleSubmit(getFormData(formData), (responseErrors) => {
       if (!responseErrors) {
         setFormErrors({});
         return;
@@ -75,25 +80,39 @@ function Form({
         setFormErrors(errors);
       }
     });
+    setLoading(false);
   };
 
-  return (
-    <form className="flex flex-col gap-4" onSubmit={validateAndSubmit}>
-      {fields.map((field) => (
-        <div key={field.name} className="flex flex-col">
-          <label htmlFor={field.name} className="mb-1 font-semibold">
-            {field.title}
-          </label>
-          <FormInput type={field.type} field={field} />
+  const FormFields = fields.map((field) => (
+    <div key={field.name} className="flex flex-col">
+      <label htmlFor={field.name} className="mb-1 font-semibold">
+        {field.title}
+      </label>
+      <FormInput type={field.type} field={field} disabled={loading} />
 
-          <span className="text-red-500 text-sm mt-1">
-            {formErrors[field.name]}
-          </span>
+      <span className="text-red-500 text-sm mt-1">
+        {formErrors[field.name]}
+      </span>
+    </div>
+  ));
+
+  return (
+    <form
+      className="flex flex-col gap-1 relative   justify-center mr-5 ml-5"
+      onSubmit={validateAndSubmit}
+    >
+      {loading && (
+        <div className="flex justify-center  absolute w-full h-full bg-white/50 top-0 left-0 z-10">
+          <Spinner />
         </div>
-      ))}
+      )}
+      <div className={`flex flex-col gap-4 ${loading ? "opacity-50" : ""}`}>
+        {FormFields}
+      </div>
       <button
         type="submit"
         className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+        disabled={loading}
       >
         {submitButtonText}
       </button>

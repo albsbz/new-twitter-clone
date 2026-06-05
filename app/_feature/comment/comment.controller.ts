@@ -6,8 +6,9 @@ import { CommentEntity } from "./types/CommentEntity.interface";
 import CommentService from "./comment.service";
 import { CreateCommentDto } from "./types/CreateCommentDto";
 import Comment from "./types/CreateCommentDto";
+import { CommentsResponseDto } from "./types/CommentsResponseDto";
 
-class CommentController extends BaseController<CommentEntity> {
+class CommentController extends BaseController<CommentsResponseDto> {
   private commentService: CommentService;
   private authController: AuthController;
   private userService: UserService;
