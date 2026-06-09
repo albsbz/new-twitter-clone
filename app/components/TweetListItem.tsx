@@ -12,7 +12,7 @@ function TweetListItem({ tweet }: { tweet: PostEntityWithReactions }) {
   const { reactionsQtty } = useReactPostState();
 
   return (
-    <article className=" p-4 border rounded shadow flex flex-col justify-between">
+    <article className=" p-4 border rounded shadow flex flex-col justify-between ">
       <Link
         href={`/tweets/${tweet.id}`}
         className="text-blue-500 hover:underline"

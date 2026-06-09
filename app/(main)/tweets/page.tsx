@@ -1,15 +1,12 @@
-import postController from "@/app/_feature/post";
 import Tweets from "./Tweets";
-import { connection } from "next/server";
 
-async function TweetsPage() {
-  await connection();
-  const tweets = await postController.getAll();
-  return (
-    <div>
-      {tweets ? <Tweets tweets={tweets} /> : <div>No tweets available</div>}
-    </div>
-  );
+async function TweetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page } = await searchParams;
+  return <Tweets page={page ? parseInt(page) : 1} />;
 }
 
 export default TweetsPage;

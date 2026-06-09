@@ -70,10 +70,11 @@ class PostController extends BaseController<PostEntity> {
     }
   }
 
-  async getAll() {
+  async getAll({page, limit}: {page: number, limit: number}) {
     try {
-      const { posts } = await this.postService.findAll();
-      return posts;
+      const skip = (page - 1) * limit;
+      const { posts, total } = await this.postService.findAll({skip, limit});
+      return { posts, total };
     } catch (error) {
       Logger.error("Error fetching posts:", error);
       throw new Error("Failed to fetch posts");

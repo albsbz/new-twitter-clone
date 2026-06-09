@@ -8,8 +8,7 @@ import mongoose from "mongoose";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(
-    limit: number = 12,
-    skip: number = 0,
+    { limit, skip }: { limit: number; skip: number } = { limit: 12, skip: 0 },
   ): Promise<AllPostsResponseDto> {
     await this.connect();
     const [result] = await Post.aggregate([
