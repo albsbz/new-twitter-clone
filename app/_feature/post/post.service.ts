@@ -1,7 +1,6 @@
 import BaseService from "@/app/_common/base.service";
 import { PostEntity } from "./types/PostEntity.interface";
 import PostResponseDto from "./types/PostResponseDto.type";
-import ApiService from "../api/ApiService";
 import AllPostsResponseDto from "./types/AllPostsResponseDto.type";
 import Post from "./db/post.model";
 import Logger from "@/app/_utils/logger";
@@ -9,8 +8,7 @@ import mongoose from "mongoose";
 
 class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
   async findAll(
-    limit: number = 10,
-    skip: number = 0,
+    { limit, skip }: { limit: number; skip: number } = { limit: 12, skip: 0 },
   ): Promise<AllPostsResponseDto> {
     await this.connect();
     const [result] = await Post.aggregate([

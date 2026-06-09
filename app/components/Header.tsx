@@ -2,13 +2,14 @@
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
+import { useUserState } from "@/app/lib/store";
 import useAuth from "../_hooks/useAuth";
 
 function Header() {
   const { handleLogin } = useAuth();
+  const { isAuthenticated } = useUserState();
   useEffect(() => {
-    handleLogin();
+    handleLogin({ notification: false });
   }, []);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -24,15 +25,23 @@ function Header() {
         <Link href="/tweets" className="hover:underline">
           Explore tweets
         </Link>
-        <Link href="/tweets/new" className="hover:underline">
-          Post a tweet
-        </Link>
+        {isAuthenticated && (
+          <Link href="/tweets/new" className="hover:underline">
+            Post a tweet
+          </Link>
+        )}
         <Link href="/" className="hover:underline">
           Trending
         </Link>
-        <Link href="/profile" className="hover:underline">
-          My profile
-        </Link>
+        {isAuthenticated ? (
+          <Link href="/profile" className="hover:underline">
+            My profile
+          </Link>
+        ) : (
+          <Link href="/login" className="hover:underline">
+            Login
+          </Link>
+        )}
       </nav>
       <Bars3Icon
         className="h-6 w-6 sm:hidden"
@@ -46,15 +55,23 @@ function Header() {
           <Link href="/tweets" className="block hover:underline">
             Explore tweets
           </Link>
-          <Link href="/tweets/new" className="block hover:underline">
-            Post a tweet
-          </Link>
+          {isAuthenticated && (
+            <Link href="/tweets/new" className="block hover:underline">
+              Post a tweet
+            </Link>
+          )}
           <Link href="/" className="block hover:underline">
             Trending
           </Link>
-          <Link href="/profile" className="block hover:underline">
-            My profile
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/profile" className="block hover:underline">
+              My profile
+            </Link>
+          ) : (
+            <Link href="/login" className="block hover:underline">
+              Login
+            </Link>
+          )}
         </nav>
       )}
     </header>

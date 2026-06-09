@@ -1,11 +1,13 @@
 import ApiService from "../_feature/api/ApiService";
 import Logger from "../_utils/logger";
 import { useNotificationState, useUserState } from "../lib/store";
+import { useRouter } from "next/navigation";
 
 function useAuth() {
   const { addNotification } = useNotificationState();
   const { logIn, logOut } = useUserState();
-  const handleLogin = async () => {
+  const router = useRouter();
+  const handleLogin = async ({ notification = true } = {}) => {
     try {
       const { data, message, error, status, success } = await ApiService.post({
         endpoint: "auth/me",
@@ -13,34 +15,42 @@ function useAuth() {
       });
 
       if (success) {
-        addNotification({ message: "Login successful!", type: "success" });
+        if (notification) {
+          addNotification({ message: "Login successful!", type: "success" });
+        }
         Logger.log("Login successful, response data:", data);
         if (data?.id) {
           logIn({ name: data?.name || null, id: data?.id });
           return;
         } else {
           Logger.error("Login response missing token:", data);
-          addNotification({
-            message: "Login failed: Missing token in response",
-            type: "error",
-          });
+          if (notification) {
+            addNotification({
+              message: "Login failed: Missing token in response",
+              type: "error",
+            });
+          }
           return;
         }
       }
       if (status === 401) {
         Logger.log("Unauthorized error during login:", message);
-        addNotification({ message, type: "error" });
+        if (notification) {
+          addNotification({ message, type: "error" });
+        }
         return;
       }
-      if (error) {
+      if (error && notification) {
         addNotification({ message: error, type: "error" });
       }
     } catch (err) {
       Logger.error("Login request failed:", err);
-      addNotification({
-        message: "Login failed. Please try again.",
-        type: "error",
-      });
+      if (notification) {
+        addNotification({
+          message: "Login failed. Please try again.",
+          type: "error",
+        });
+      }
     }
   };
 
@@ -54,6 +64,7 @@ function useAuth() {
       addNotification({ message: "Logout successful!", type: "success" });
       Logger.log("Logout successful, response data:", data);
       logOut();
+      router.push("/login");
       return;
     }
     if (status === 401) {

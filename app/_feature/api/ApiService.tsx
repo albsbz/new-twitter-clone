@@ -1,5 +1,6 @@
 import Logger from "@/app/_utils/logger";
 import { publicEnv } from "@/app/lib/env";
+import { ApiHttpError } from "./ApiHttpError";
 
 const normalizeApiBaseUrl = (baseUrl: string): string => {
   const trimmedBaseUrl = baseUrl.trim();
@@ -46,6 +47,58 @@ class ApiService {
     return api ? `${this.apiUrl}/${endpoint}` : `${basicUrl}/${endpoint}`;
   }
 
+  private async parseErrorResponse(response: Response) {
+    const fallbackMessage = `HTTP error! status: ${response.status}`;
+    const contentType =
+      response.headers.get("content-type")?.toLowerCase() ?? "";
+
+    if (contentType.includes("application/json")) {
+      try {
+        const payload = (await response.json()) as {
+          message?: string;
+          error?: unknown;
+        };
+        return {
+          message: payload.message ?? fallbackMessage,
+          error: payload.error,
+        };
+      } catch {
+        // Fall back to text parsing below.
+      }
+    }
+
+    try {
+      const text = await response.text();
+      if (text) {
+        return { message: text, error: undefined };
+      }
+    } catch {
+      // Ignore body parsing errors and use fallback message.
+    }
+
+    return { message: fallbackMessage, error: undefined };
+  }
+
+  private async throwApiHttpError(
+    response: Response,
+    method: string,
+  ): Promise<never> {
+    const { message, error } = await this.parseErrorResponse(response);
+    Logger.error(
+      `API ${method} request failed with status:`,
+      response.status,
+      "and message:",
+      message,
+      "error:",
+      error,
+    );
+    throw new ApiHttpError({
+      status: response.status,
+      message,
+      error,
+    });
+  }
+
   async get({
     endpoint,
     api = false,
@@ -60,7 +113,7 @@ class ApiService {
       let init = { ...this.init, method: "GET" };
       const response = await fetch(url, api ? init : undefined);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        await this.throwApiHttpError(response, "GET");
       }
       return await response.json();
     } catch (error) {
@@ -79,7 +132,7 @@ class ApiService {
   }: {
     params?: any;
     body?: any;
-    formData?: HTMLFormElement;
+    formData?: FormData;
     endpoint: string;
     api?: boolean;
     basicUrl?: string;
@@ -100,7 +153,7 @@ class ApiService {
       body: requestBody,
     };
     if (formData) {
-      init.body = new FormData(formData);
+      init.body = formData;
     }
     if (!formData) {
       init.headers = {
@@ -111,16 +164,7 @@ class ApiService {
     try {
       const response = await fetch(url, init);
       if (!response.ok) {
-        const errorText = await response.text();
-        Logger.error(
-          "API POST request failed with status:",
-          response.status,
-          "and response:",
-          errorText,
-        );
-        throw new Error(
-          `HTTP error! status: ${response.status}, response: ${errorText}`,
-        );
+        await this.throwApiHttpError(response, "POST");
       }
       const { data, ...rest } = await response.json();
       return {
@@ -134,7 +178,65 @@ class ApiService {
       throw error;
     }
   }
+
+  async patch({
+    params,
+    body,
+    formData,
+    endpoint,
+    api = false,
+    basicUrl = this.basicUrl,
+  }: {
+    params?: any;
+    body?: any;
+    formData?: FormData;
+    endpoint: string;
+    api?: boolean;
+    basicUrl?: string;
+  }) {
+    Logger.log("API PATCH request parameters:", {
+      params,
+      body,
+      formData: formData ? "Provided" : "Not provided",
+      endpoint,
+      api,
+      basicUrl,
+    });
+    const url = this.constructURL({ endpoint, api, basicUrl });
+    const requestBody = body ? JSON.stringify(body) : JSON.stringify(params);
+    const init: RequestInit = {
+      ...this.init,
+      method: "PATCH",
+      body: requestBody,
+    };
+    if (formData) {
+      init.body = formData;
+    }
+    if (!formData) {
+      init.headers = {
+        "Content-Type": "application/json",
+        ...init.headers,
+      };
+    }
+    try {
+      const response = await fetch(url, init);
+      if (!response.ok) {
+        await this.throwApiHttpError(response, "PATCH");
+      }
+      const { data, ...rest } = await response.json();
+      return {
+        data,
+        ...rest,
+        status: response.status,
+        success: response.ok,
+      };
+    } catch (error) {
+      Logger.error("API PATCH request failed:", error);
+      throw error;
+    }
+  }
 }
+
 if (!publicEnv.NEXT_PUBLIC_EXTERNAL_URL) {
   throw new Error(
     "NEXT_PUBLIC_EXTERNAL_URL environment variable is not defined",

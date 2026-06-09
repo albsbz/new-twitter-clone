@@ -4,8 +4,9 @@ export interface UserEntity {
   password: string;
   name: string | undefined;
   isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  verificationEmailSendAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
   likedPosts: string[];
   dislikedPosts: string[];
 }

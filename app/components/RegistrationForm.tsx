@@ -1,33 +1,42 @@
 import ApiService from "@/app/_feature/api/ApiService";
+import { ApiHttpError } from "@/app/_feature/api/ApiHttpError";
 import { UserSchema } from "@/app/_feature/auth/types/RegistrationDto";
 import Form from "@/app/components/Form";
 import { useNotificationState } from "@/app/lib/store";
 import Logger from "../_utils/logger";
+import z from "zod";
 
 function RegistrationForm() {
   const { addNotification } = useNotificationState();
   const handleSubmit = async (
-    e: React.SubmitEvent<HTMLFormElement>,
-    setResponseError: React.Dispatch<React.SetStateAction<string | null>>,
+    formData: FormData,
+    setResponseError: React.Dispatch<
+      React.SetStateAction<string | z.core.$ZodIssue[] | null>
+    >,
   ) => {
     setResponseError(null);
-    const { message, error, status, success } = await ApiService.post({
-      endpoint: "auth/registration",
-      api: true,
-      formData: e.currentTarget,
-    });
-
-    if (success) {
+    try {
+      await ApiService.post({
+        endpoint: "auth/registration",
+        api: true,
+        formData,
+      });
       addNotification({ message: "Registration successful!", type: "success" });
-      return;
-    }
-    if (status === 409) {
-      Logger.log("Conflict error during registration:", message);
-      addNotification({ message, type: "error" });
-      return;
-    }
-    if (error) {
-      setResponseError(error);
+    } catch (err) {
+      if (err instanceof ApiHttpError) {
+        const responseError = err.cause.error;
+        if (Array.isArray(responseError)) {
+          setResponseError(responseError as z.core.$ZodIssue[]);
+          return;
+        }
+        Logger.log("Registration error:", err.cause.message);
+        addNotification({ message: err.cause.message, type: "error" });
+        return;
+      }
+      addNotification({
+        message: "Registration failed. Please try again.",
+        type: "error",
+      });
     }
   };
   return (

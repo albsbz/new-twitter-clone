@@ -7,10 +7,11 @@ const UserSchema = new Schema<UserEntity>({
   password: String,
   name: String,
   isVerified: Boolean,
-  createdAt: String,
+  verificationEmailSendAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
   likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
   dislikedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
-  updatedAt: String,
+  updatedAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.models.User ||

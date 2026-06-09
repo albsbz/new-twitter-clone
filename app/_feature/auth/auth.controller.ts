@@ -5,12 +5,18 @@ import bcrypt, { genSalt, hash } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import Logger from "@/app/_utils/logger";
-import { sendVerificationEmail } from "@/app/lib/mail";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/app/lib/mail";
 import { getServerEnv } from "@/app/lib/env";
 import VerifyEmail, {
   VerifyEmailDto,
   VerifyEmailSchema,
 } from "./types/VerifyEmailDto";
+import UpdatePasswordSchema, {
+  UpdatePasswordDto,
+} from "./types/UpdatePasswordDto";
+import ResetPasswordSchema, {
+  ResetPasswordDto,
+} from "./types/ResetPasswordDto";
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
@@ -18,6 +24,17 @@ class AuthController extends BaseController<{}> {
   constructor({ userService }: { userService: UserService }) {
     super();
     this.userService = userService;
+  }
+
+  async getUserIdFromAuth() {
+    let userId;
+    try {
+      const data = await this.checkAuth();
+      userId = data.id;
+    } catch (error) {
+      Logger.error("Error checking authentication:", error);
+    }
+    return userId;
   }
 
   async checkAuth() {
@@ -50,7 +67,7 @@ class AuthController extends BaseController<{}> {
       if (!validated.success) {
         return this.formResponse({
           message: "Validation failed",
-          error: JSON.stringify(validated.error.issues),
+          error: validated.error.issues,
           status: 400,
         });
       }
@@ -62,7 +79,6 @@ class AuthController extends BaseController<{}> {
       if (!decoded || !decoded.userId) {
         return this.formResponse({
           message: "Invalid token",
-          error: "Token verification failed",
           status: 400,
         });
       }
@@ -76,7 +92,6 @@ class AuthController extends BaseController<{}> {
       } else {
         return this.formResponse({
           message: "User not found",
-          error: "No user associated with this token",
           status: 404,
         });
       }
@@ -90,13 +105,117 @@ class AuthController extends BaseController<{}> {
     }
   }
 
+  async updatePassword(data: UpdatePasswordDto) {
+    try {
+      const validated = this.validate<UpdatePasswordDto>({
+        data,
+        schema: UpdatePasswordSchema,
+      });
+      if (!validated.success) {
+        return this.formResponse({
+          message: "Validation failed",
+          error: validated.error.issues,
+          status: 400,
+        });
+      }
+      const { JWT_SECRET } = getServerEnv();
+      const { token } = validated.data;
+      const decoded = jwt.verify(token, JWT_SECRET) as {
+        userId: string;
+      };
+      if (!decoded || !decoded.userId) {
+        return this.formResponse({
+          message: "Invalid token",
+          status: 400,
+        });
+      }
+      const salt = await genSalt(10);
+      const hashedPassword = await hash(validated.data.password, salt);
+      const result = await this.userService.updatePassword({
+        userId: decoded.userId,
+        newPassword: hashedPassword,
+      });
+      if (result) {
+        return this.formResponse({
+          message: "Password updated successfully",
+          data: result,
+          status: 200,
+        });
+      } else {
+        return this.formResponse({
+          message: "User not found",
+          status: 404,
+        });
+      }
+    } catch (error) {
+      Logger.error("Error updating password:", error);
+      return this.formResponse({
+        message: "Failed to update password",
+        error: error instanceof Error ? error.message : "Unknown error",
+        status: 500,
+      });
+    }
+  }
+
+  async sendVerificationEmail(userId: string, email: string) {
+    const { JWT_SECRET } = getServerEnv();
+    const emailVerificationToken = jwt.sign({ userId }, JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    sendVerificationEmail(email, emailVerificationToken).catch((err) => {
+      Logger.error("Error sending verification email:", err);
+    });
+  }
+
+  async resetPassword(data: ResetPasswordDto) {
+    try {
+      const validated = this.validate<ResetPasswordDto>({
+        data,
+        schema: ResetPasswordSchema,
+      });
+      if (!validated.success) {
+        return this.formResponse({
+          message: "Validation failed",
+          error: validated.error.issues,
+          status: 400,
+        });
+      }
+      const { email } = validated.data;
+      const user = await this.userService.findByEmail(email);
+      if (!user) {
+        return this.formResponse({
+          message: "User not found",
+          status: 404,
+        });
+      }
+      const { JWT_SECRET } = getServerEnv();
+      const resetPasswordToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+        expiresIn: "24h",
+      });
+      sendPasswordResetEmail(email, resetPasswordToken).catch((err) => {
+        Logger.error("Error sending password reset email:", err);
+      });
+      return this.formResponse({
+        message: "Password reset email sent",
+        status: 200,
+      });
+    } catch (error) {
+      Logger.error("Error in resetPassword:", error);
+      return this.formResponse({
+        message: "Failed to send password reset email",
+        error: error instanceof Error ? error.message : "Unknown error",
+        status: 500,
+      });
+    }
+  }
+
   async registration(formData: RegistrationDto) {
     const { success, data, error } = User.safeParse(formData);
     Logger.log("Parsed data:", { success, data, error });
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
     } else {
@@ -105,7 +224,6 @@ class AuthController extends BaseController<{}> {
         if (existingUser) {
           return this.formResponse({
             message: "Email already in use",
-            error: "A user with this email already exists",
             status: 409,
           });
         }
@@ -117,19 +235,10 @@ class AuthController extends BaseController<{}> {
           isVerified: false,
           likedPosts: [],
           dislikedPosts: [],
+          verificationEmailSendAt: new Date(),
         });
 
-        const { JWT_SECRET } = getServerEnv();
-        const emailVerificationToken = jwt.sign(
-          { userId: newUser.id },
-          JWT_SECRET,
-          { expiresIn: "24h" },
-        );
-        sendVerificationEmail(newUser.email, emailVerificationToken).catch(
-          (err) => {
-            Logger.error("Error sending verification email:", err);
-          },
-        );
+        this.sendVerificationEmail(newUser.id, newUser.email);
 
         return this.formResponse({
           message: "User registered successfully",
@@ -165,7 +274,6 @@ class AuthController extends BaseController<{}> {
     } catch (error) {
       return this.formResponse({
         message: "No token provided",
-        error: "Unauthorized",
         status: 401,
       });
     }
@@ -177,7 +285,7 @@ class AuthController extends BaseController<{}> {
     if (!success) {
       return this.formResponse({
         message: "Validation failed",
-        error: JSON.stringify(error!.issues),
+        error: error!.issues,
         status: 400,
       });
     } else {
@@ -186,7 +294,6 @@ class AuthController extends BaseController<{}> {
         if (!existingUser) {
           return this.formResponse({
             message: "Invalid email or password",
-            error: "Unauthorized",
             status: 401,
           });
         }
@@ -197,7 +304,6 @@ class AuthController extends BaseController<{}> {
         if (!passwordCompare) {
           return this.formResponse({
             message: "Invalid email or password",
-            error: "Unauthorized",
             status: 401,
           });
         }

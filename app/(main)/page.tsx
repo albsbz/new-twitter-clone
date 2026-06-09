@@ -3,21 +3,20 @@ import postController from "../_feature/post";
 import Tweets from "./tweets/Tweets";
 import { connection } from "next/server";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await connection();
-  let tweets = await postController.getAll();
-  const reactions = await postController.getReactions();
-  tweets = tweets.map((tweet) => ({
-    ...tweet,
-    isLiked: reactions.likedPosts.includes(tweet.id),
-    isDisliked: reactions.dislikedPosts.includes(tweet.id),
-  }));
+  const { page } = await searchParams;
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex min-h-screen flex-col items-center justify-start p-24">
       <h1 className="text-4xl font-bold mb-8">Welcome to Let's Tweet!</h1>
 
-      <div>
-        {tweets ? <Tweets tweets={tweets} /> : <div>No tweets available</div>}
+      <div className="w-full max-w-5xl">
+        <Tweets page={page ? parseInt(page) : 1} />
       </div>
     </main>
   );

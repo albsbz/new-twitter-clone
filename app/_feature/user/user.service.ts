@@ -21,14 +21,60 @@ class UserService extends BaseService {
     }
   }
 
-   async findByIdLiked(id: UserEntity["id"]) {
+  async findByIdLiked(id: UserEntity["id"]) {
     await this.connect();
     try {
-      const user = await User.findOne({ _id: id }).select("likedPosts dislikedPosts") ;
+      const user = await User.findOne({ _id: id }).select(
+        "likedPosts dislikedPosts",
+      );
       Logger.log("Found user by id:", user);
       return user;
     } catch (error) {
       Logger.error("Error finding user by id:", error);
+      throw error;
+    }
+  }
+
+  async updatePassword({
+    userId,
+    newPassword,
+  }: {
+    userId: UserEntity["id"];
+    newPassword: string;
+  }) {
+    await this.connect();
+    try {
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
+        { password: newPassword },
+        { returnDocument: "after" },
+      ).select({ password: 0 });
+      Logger.log("Updated user password:", user);
+      return user;
+    } catch (error) {
+      Logger.error("Failed to update user password:", error);
+      throw error;
+    }
+  }
+
+  async updateName({
+    userId,
+    newName,
+  }: {
+    userId: UserEntity["id"];
+    newName: string;
+  }) {
+    await this.connect();
+    try {
+      const user = await User.findOneAndUpdate(
+        { _id: userId },
+        { name: newName },
+        { returnDocument: "after" },
+      ).select({ password: 0 });
+      Logger.log("Updated user name:", user);
+      return user;
+    } catch (error) {
+      Logger.error("Failed to update user name:", error);
       throw error;
     }
   }

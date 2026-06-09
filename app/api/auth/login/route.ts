@@ -21,6 +21,5 @@ export async function POST(
       secure: true,
     });
   }
-  const nextResponse = new NextResponse(JSON.stringify(responseData), init);
-  return nextResponse;
+  return NextResponse.json(responseData, { status });
 }

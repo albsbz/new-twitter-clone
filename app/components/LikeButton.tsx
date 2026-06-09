@@ -14,8 +14,17 @@ function LikeButton({
   tweetId: string;
   type: "like" | "dislike";
 }) {
-  const { addLike, removeLike, addDislike, removeDislike, reactions } =
-    useReactPostState();
+  const {
+    addLike,
+    removeLike,
+    addDislike,
+    removeDislike,
+    incrementLikeCount,
+    decrementLikeCount,
+    incrementDislikeCount,
+    decrementDislikeCount,
+    reactions,
+  } = useReactPostState();
   const { isAuthenticated } = useUserState();
   const { addNotification } = useNotificationState();
 
@@ -39,6 +48,7 @@ function LikeButton({
       });
       if (post) {
         addLike(tweetId);
+        incrementLikeCount(tweetId);
       }
       return;
     }
@@ -54,6 +64,7 @@ function LikeButton({
       });
       if (post) {
         removeLike(tweetId);
+        decrementLikeCount(tweetId);
       }
       return;
     }
@@ -69,7 +80,9 @@ function LikeButton({
       });
       if (post) {
         removeDislike(tweetId);
+        decrementDislikeCount(tweetId);
         addLike(tweetId);
+        incrementLikeCount(tweetId);
       }
       return;
     }
@@ -95,6 +108,7 @@ function LikeButton({
       });
       if (post) {
         addDislike(tweetId);
+        incrementDislikeCount(tweetId);
       }
       return;
     }
@@ -110,6 +124,7 @@ function LikeButton({
       });
       if (post) {
         removeDislike(tweetId);
+        decrementDislikeCount(tweetId);
       }
       return;
     }
@@ -125,7 +140,9 @@ function LikeButton({
       });
       if (post) {
         removeLike(tweetId);
+        decrementLikeCount(tweetId);
         addDislike(tweetId);
+        incrementDislikeCount(tweetId);
       }
       return;
     }

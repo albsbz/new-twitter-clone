@@ -1,15 +1,12 @@
 import AuthController from "../auth/auth.controller";
 import UserService from "../user/user.service";
-import PostController from "./post.controller";
-import PostService from "./post.service";
+import UserController from "./user.controller";
 
-const postService = new PostService();
 const userService = new UserService();
 const authController = new AuthController({ userService });
-const postController = new PostController({
-  postService,
+const userController = new UserController({
   authController,
   userService,
 });
 
-export default postController;
+export default userController;
