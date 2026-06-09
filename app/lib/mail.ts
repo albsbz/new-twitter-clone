@@ -22,7 +22,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
   const confirmLink = `${publicEnv.NEXT_PUBLIC_BASIC_URL}/verify-email?token=${token}`;
 
   const mailOptions = {
-    from: '"My App" <noreply@myapp.com>',
+    from: '"Alexkamens twitter clone" <noreply@alexkamens.org>',
     to: email,
     subject: "Confirm your email address",
     html: `
@@ -41,7 +41,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
   const resetLink = `${publicEnv.NEXT_PUBLIC_BASIC_URL}/update-password?token=${token}`;
 
   const mailOptions = {
-    from: '"My App" <noreply@myapp.com>',
+    from: '"Alexkamens twitter clone" <noreply@alexkamens.org>',
     to: email,
     subject: "Reset your password",
     html: `
