@@ -192,7 +192,7 @@ class AuthController extends BaseController<{}> {
       const resetPasswordToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
         expiresIn: "24h",
       });
-      sendPasswordResetEmail(email, resetPasswordToken).catch((err) => {
+      await sendPasswordResetEmail(email, resetPasswordToken).catch((err) => {
         Logger.error("Error sending password reset email:", err);
       });
       return this.formResponse({
@@ -238,7 +238,7 @@ class AuthController extends BaseController<{}> {
           verificationEmailSendAt: new Date(),
         });
 
-        this.sendVerificationEmail(newUser.id, newUser.email);
+        await this.sendVerificationEmail(newUser.id, newUser.email);
 
         return this.formResponse({
           message: "User registered successfully",
