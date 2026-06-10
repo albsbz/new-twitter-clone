@@ -17,9 +17,13 @@ const useNotificationState = create<{
     set((state) => ({ notifications: [...state.notifications, notification] })),
   clearNotifications: () => set(() => ({ notifications: [] })),
   subscribeSocketNotifications: async (userId: string) => {
-    Logger.log("Subscribing to socket notifications for userId:", userId);
+    if (!userId) {
+      return;
+    }
+    if (!socket.connected) {
+      socket.connect();
+    }
     socket.off("notification");
-    socket.emit("join-room", userId);
     socket.on("notification", (data: { message: string; postId: string }) => {
       Logger.log("Received notification from socket:", data);
       set((state) => ({

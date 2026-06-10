@@ -66,6 +66,7 @@ function useAuth() {
     if (success) {
       addNotification({ message: "Logout successful!", type: "success" });
       Logger.log("Logout successful, response data:", data);
+      socket.disconnect();
       logOut();
       router.push("/login");
       return;

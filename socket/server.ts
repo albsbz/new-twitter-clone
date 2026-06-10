@@ -1,6 +1,8 @@
 import { Server } from "socket.io";
 import { createServer } from "http";
 import Redis from "ioredis";
+import jwt from "jsonwebtoken";
+import { parse } from "cookie";
 
 const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
 console.log("Connecting to Redis at:", redisUrl);
@@ -9,18 +11,37 @@ const redis = new Redis(redisUrl);
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: process.env.NEXT_PUBLIC_BASIC_URL,
+    credentials: true,
     methods: ["GET", "POST"],
   },
+});
+
+io.use((socket, next) => {
+  const rawCookie = socket.handshake.headers.cookie || "";
+  const cookies = parse(rawCookie);
+  const token = cookies["token"];
+
+  if (!token) {
+    return next(new Error("Unauthorized"));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+    };
+    socket.data.userId = decoded.userId;
+    next();
+  } catch {
+    next(new Error("Unauthorized"));
+  }
 });
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
-  socket.on("join-room", (userId: string) => {
-    socket.join(userId);
-    console.log(`Socket ${socket.id} joined room ${userId}`);
-  });
+  socket.join(socket.data.userId);
+  console.log(`Socket ${socket.id} joined room ${socket.data.userId}`);
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
