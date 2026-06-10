@@ -236,7 +236,7 @@ jobs:
 
             chmod 600 .env.production
 
-            SERVICES="$(docker compose -f docker-compose.vps.yml --env-file .env.production config --services || true)"
+            SERVICES="$(docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod config --services || true)"
             if ! echo "$SERVICES" | grep -qx "redis"; then
               echo "Service 'redis' not found in docker-compose.vps.yml on VPS."
               echo "Detected services:"
@@ -272,8 +272,10 @@ jobs:
               exit 1
             fi
 
-            docker compose -f docker-compose.vps.yml --env-file .env.production pull nextjs-twitter
-            docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps redis
+            COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
+
+            $COMPOSE pull nextjs-twitter
+            $COMPOSE up -d --no-deps redis
 
             # Ensure existing mongo is attached to the app network before starting app services.
             APP_NET="$(docker inspect --format='{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s\n" $k}}{{end}}' redis_prod 2>/dev/null | head -n 1)"
@@ -281,9 +283,9 @@ jobs:
               docker network connect "$APP_NET" mongodb_prod >/dev/null 2>&1 || true
             fi
 
-            docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps socket-server
-            docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps nextjs-twitter
-            docker compose -f docker-compose.vps.yml --env-file .env.production up -d --no-deps caddy
+            $COMPOSE up -d --no-deps socket-server
+            $COMPOSE up -d --no-deps nextjs-twitter
+            $COMPOSE up -d --no-deps caddy
 
             DEPLOY_OK=0
             for i in $(seq 1 36); do
