@@ -330,7 +330,17 @@ jobs:
 
             docker network connect "$TARGET_NET" nextjs_twitter_prod >/dev/null 2>&1 || true
 
-            $COMPOSE up -d --no-deps caddy
+            if docker inspect caddy_proxy >/dev/null 2>&1; then
+              CADDY_STATE="$(docker inspect --format='{{.State.Status}}' caddy_proxy 2>/dev/null || true)"
+              if [ "$CADDY_STATE" != "running" ]; then
+                docker start caddy_proxy >/dev/null
+                echo "caddy_proxy started."
+              fi
+            else
+              $COMPOSE up -d --no-deps caddy
+            fi
+
+            docker network connect "$TARGET_NET" caddy_proxy >/dev/null 2>&1 || true
 
             DEPLOY_OK=0
             for i in $(seq 1 36); do
