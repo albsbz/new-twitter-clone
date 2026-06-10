@@ -123,6 +123,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure VPS app directory exists
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          envs: VPS_APP_DIR
+          script: |
+            mkdir -p "$(printf '%s' "$VPS_APP_DIR" | tr -d '\r\n')"
+
       - name: Sync deploy files to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -133,6 +147,7 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT }}
           source: docker-compose.vps.yml,Caddyfile,Dockerfile.socket,package.json,package-lock.json,socket
           target: ${{ secrets.VPS_APP_DIR }}
+          overwrite: true
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
