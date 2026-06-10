@@ -151,6 +151,15 @@ jobs:
 
             cd "$VPS_APP_DIR"
 
+            if [ -d .git ]; then
+              git fetch origin main
+              git checkout main
+              git pull --ff-only origin main
+            else
+              echo "VPS_APP_DIR is not a git repository. Cannot sync latest compose/workflow changes."
+              exit 1
+            fi
+
             if [ -z "$DOMAIN_TWITTER" ]; then
               echo "DOMAIN_TWITTER is empty. Set the secret in the twitter repository."
               exit 1
@@ -185,6 +194,20 @@ jobs:
 
             if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
               echo "docker-compose.vps.yml or Caddyfile not found in VPS_APP_DIR. Run infra deploy first."
+              exit 1
+            fi
+
+            SERVICES="$(docker compose -f docker-compose.vps.yml --env-file .env.production config --services || true)"
+            if ! echo "$SERVICES" | grep -qx "redis"; then
+              echo "Service 'redis' not found in docker-compose.vps.yml on VPS. Ensure latest repo changes are deployed."
+              echo "Detected services:"
+              echo "$SERVICES"
+              exit 1
+            fi
+            if ! echo "$SERVICES" | grep -qx "socket-server"; then
+              echo "Service 'socket-server' not found in docker-compose.vps.yml on VPS. Ensure latest repo changes are deployed."
+              echo "Detected services:"
+              echo "$SERVICES"
               exit 1
             fi
 
