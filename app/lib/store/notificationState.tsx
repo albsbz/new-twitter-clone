@@ -20,9 +20,6 @@ const useNotificationState = create<{
     if (!userId) {
       return;
     }
-    if (!socket.connected) {
-      socket.connect();
-    }
     socket.off("notification");
     socket.on("notification", (data: { message: string; postId: string }) => {
       Logger.log("Received notification from socket:", data);

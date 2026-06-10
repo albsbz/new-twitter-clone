@@ -1,6 +1,7 @@
 {$DOMAIN_TWITTER:twitter.alexkamens.org} {
   encode gzip zstd
 
+  reverse_proxy /socket.io/* socket-server:4000
   reverse_proxy nextjs-twitter:3000
 }
 

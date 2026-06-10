@@ -20,6 +20,9 @@ function useAuth() {
         Logger.log("Login successful, response data:", data);
         if (data?.id) {
           logIn({ name: data?.name || null, id: data?.id });
+          if (!socket.connected) {
+            socket.connect();
+          }
           subscribeSocketNotifications(data.id);
           if (notification) {
             addNotification({ message: "Login successful!", type: "success" });
