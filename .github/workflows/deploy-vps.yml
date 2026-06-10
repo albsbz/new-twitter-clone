@@ -306,7 +306,18 @@ jobs:
             docker network connect "$TARGET_NET" redis_prod >/dev/null 2>&1 || true
             docker network connect "$TARGET_NET" mongodb_prod >/dev/null 2>&1 || true
 
-            $COMPOSE up -d --no-deps socket-server
+            if docker inspect socket_server_prod >/dev/null 2>&1; then
+              SOCKET_STATE="$(docker inspect --format='{{.State.Status}}' socket_server_prod 2>/dev/null || true)"
+              if [ "$SOCKET_STATE" != "running" ]; then
+                docker start socket_server_prod >/dev/null
+                echo "socket_server_prod started."
+              fi
+            else
+              $COMPOSE up -d --no-deps socket-server
+            fi
+
+            docker network connect "$TARGET_NET" socket_server_prod >/dev/null 2>&1 || true
+
             $COMPOSE up -d --no-deps nextjs-twitter
             $COMPOSE up -d --no-deps caddy
 
