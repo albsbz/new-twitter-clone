@@ -7,6 +7,7 @@ import CommentService from "./comment.service";
 import { CreateCommentDto } from "./types/CreateCommentDto";
 import Comment from "./types/CreateCommentDto";
 import { CommentsResponseDto } from "./types/CommentsResponseDto";
+import redis from "@/app/_utils/redis";
 
 class CommentController extends BaseController<CommentsResponseDto> {
   private commentService: CommentService;
@@ -63,6 +64,15 @@ class CommentController extends BaseController<CommentsResponseDto> {
         ...data,
         authorId: userId,
       });
+
+      await redis.publish(
+        "NEW_COMMENT",
+        JSON.stringify({
+          authorId: newComment.postAuthorId,
+          text: newComment.body,
+          postId: newComment.id,
+        }),
+      );
 
       return this.formResponse({
         message: "Comment created successfully",

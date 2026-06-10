@@ -45,7 +45,7 @@ function LoginForm() {
           setResponseError(responseError as z.core.$ZodIssue[]);
           return;
         }
-        console.log("Login request failed with API error:", err.cause.message);
+        Logger.error("Login request failed with API error:", err.cause.message);
         addNotification({
           message: err.cause.message,
           type: "error",

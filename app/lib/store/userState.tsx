@@ -10,13 +10,12 @@ const initialState: {
   isAuthenticated: false,
   id: null,
 };
-// Define types for state & actions
+
 type UserState = typeof initialState & {
   logIn: (params: { name?: string | null; id: string }) => void;
   logOut: () => void;
 };
 
-// Create store using the curried form of `create`
 const useUserState = create<UserState>()((set) => ({
   ...initialState,
   logIn: ({ name, id }: { name?: string | null; id: string }) =>
