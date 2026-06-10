@@ -7,9 +7,11 @@ import ResetPasswordSchema, {
   ResetPasswordShape,
 } from "@/app/_feature/auth/types/ResetPasswordDto";
 import z from "zod";
+import { useRouter } from "next/navigation";
 
 function ResetPassword() {
   const { addNotification } = useNotificationState();
+  const router = useRouter();
   const handleSubmit = async (
     formData: FormData,
     setResponseError: React.Dispatch<
@@ -27,6 +29,7 @@ function ResetPassword() {
         message: "Password reset successfully!",
         type: "success",
       });
+      router.push("/login");
     } catch (err) {
       if (err instanceof ApiHttpError) {
         const responseError = err.cause.error;

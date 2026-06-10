@@ -12,13 +12,14 @@ export async function POST(
   const [responseData, status] = response;
   let init = { status };
   if (token) {
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieStore = await cookies();
     cookieStore.set("token", token, {
       httpOnly: true,
       path: "/",
       maxAge: 3600,
       sameSite: "strict",
-      secure: true,
+      secure: isProduction,
     });
   }
   return NextResponse.json(responseData, { status });

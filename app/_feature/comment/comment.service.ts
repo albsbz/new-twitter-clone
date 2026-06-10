@@ -2,14 +2,31 @@ import BaseService from "@/app/_common/base.service";
 import Logger from "@/app/_utils/logger";
 import mongoose from "mongoose";
 import Comment from "./db/comment.model";
-import { CommentsResponseDto } from "./types/CommentsResponseDto";
+import { CommentsResponseDto, CommentsCreateResponseDto } from "./types/CommentsResponseDto";
 import {
   CommentWithAuthor,
+  CommentWithAuthorAndPostAuthor,
   CreateCommentData,
+
 } from "@/app/_feature/comment/types/CommentEntity.interface";
 
 class CommentService extends BaseService<{}, {}> {
-  private selectFields(comment: CommentWithAuthor): CommentsResponseDto {
+  private selectFieldsWithAuthorAndPostAuthor(
+    comment: CommentWithAuthorAndPostAuthor,
+  ): CommentsCreateResponseDto {
+    const { _id, postId, authorId, ...rest } = comment;
+    return {
+      ...rest,
+      id: _id.toString(),
+      postId: postId._id.toString(),
+      postAuthorId: postId.author.toString(),
+      authorId: authorId._id.toString(),
+      authorName: authorId.name,
+    };
+  }
+  private selectFieldsWithAuthor(
+    comment: CommentWithAuthor,
+  ): CommentsResponseDto {
     const { _id, postId, authorId, ...rest } = comment;
     return {
       ...rest,
@@ -25,7 +42,7 @@ class CommentService extends BaseService<{}, {}> {
   async findById(id: string): Promise<null> {
     return null;
   }
-  async create(data: CreateCommentData): Promise<CommentsResponseDto> {
+  async create(data: CreateCommentData): Promise<CommentsCreateResponseDto> {
     await this.connect();
     const comment = new Comment({
       ...data,
@@ -34,10 +51,14 @@ class CommentService extends BaseService<{}, {}> {
     });
 
     const saved = await comment.save();
-    const populated = await saved.populate("authorId", "name");
-    const res = populated.toObject() as CommentWithAuthor;
+    const populated = await saved.populate([
+      { path: "authorId", select: "name" },
+      { path: "postId", select: "author" },
+    ]);
+
+    const res = populated.toObject() as CommentWithAuthorAndPostAuthor;
     Logger.log("Created comment:", res);
-    return this.selectFields(res);
+    return this.selectFieldsWithAuthorAndPostAuthor(res);
   }
   async findByPostId(postId: string): Promise<CommentsResponseDto[]> {
     await this.connect();
@@ -48,7 +69,7 @@ class CommentService extends BaseService<{}, {}> {
       .lean();
 
     return comments.map((comment: CommentWithAuthor) => {
-      return this.selectFields(comment);
+      return this.selectFieldsWithAuthor(comment);
     });
   }
 }

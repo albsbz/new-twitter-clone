@@ -5,9 +5,11 @@ import Form from "@/app/components/Form";
 import { useNotificationState } from "@/app/lib/store";
 import Logger from "../_utils/logger";
 import z from "zod";
+import { useRouter } from "next/navigation";
 
 function RegistrationForm() {
   const { addNotification } = useNotificationState();
+  const router = useRouter();
   const handleSubmit = async (
     formData: FormData,
     setResponseError: React.Dispatch<
@@ -22,6 +24,7 @@ function RegistrationForm() {
         formData,
       });
       addNotification({ message: "Registration successful!", type: "success" });
+      router.push("/login");
     } catch (err) {
       if (err instanceof ApiHttpError) {
         const responseError = err.cause.error;

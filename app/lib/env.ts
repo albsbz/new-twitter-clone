@@ -44,6 +44,7 @@ const getServerEnv = () => ({
     "EMAIL_SERVER_PASSWORD",
     process.env.EMAIL_SERVER_PASSWORD,
   ),
+  REDIS_URL: requireEnv("REDIS_URL", process.env.REDIS_URL || 'redis://redis:6379'),
 });
 
 export { getServerEnv, publicEnv };

@@ -2,9 +2,11 @@ import ApiService from "../_feature/api/ApiService";
 import Logger from "../_utils/logger";
 import { useNotificationState, useUserState } from "../lib/store";
 import { useRouter } from "next/navigation";
+import socket from "../_utils/socket-client";
 
 function useAuth() {
-  const { addNotification } = useNotificationState();
+  const { addNotification, subscribeSocketNotifications } =
+    useNotificationState();
   const { logIn, logOut } = useUserState();
   const router = useRouter();
   const handleLogin = async ({ notification = true } = {}) => {
@@ -15,12 +17,16 @@ function useAuth() {
       });
 
       if (success) {
-        if (notification) {
-          addNotification({ message: "Login successful!", type: "success" });
-        }
         Logger.log("Login successful, response data:", data);
         if (data?.id) {
           logIn({ name: data?.name || null, id: data?.id });
+          if (!socket.connected) {
+            socket.connect();
+          }
+          subscribeSocketNotifications(data.id);
+          if (notification) {
+            addNotification({ message: "Login successful!", type: "success" });
+          }
           return;
         } else {
           Logger.error("Login response missing token:", data);
@@ -63,6 +69,7 @@ function useAuth() {
     if (success) {
       addNotification({ message: "Logout successful!", type: "success" });
       Logger.log("Logout successful, response data:", data);
+      socket.disconnect();
       logOut();
       router.push("/login");
       return;
