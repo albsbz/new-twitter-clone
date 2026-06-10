@@ -1,4 +1,5 @@
 FROM node:20-alpine
+RUN apk add --no-cache wget
 WORKDIR /app
 
 ARG NEXT_PUBLIC_EXTERNAL_URL
