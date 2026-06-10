@@ -290,13 +290,21 @@ jobs:
             COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
 
             $COMPOSE pull nextjs-twitter
-            $COMPOSE up -d --no-deps redis
 
-            # Ensure existing mongo is attached to the app network before starting app services.
-            APP_NET="$(docker inspect --format='{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s\n" $k}}{{end}}' redis_prod 2>/dev/null | head -n 1)"
-            if [ -n "$APP_NET" ]; then
-              docker network connect "$APP_NET" mongodb_prod >/dev/null 2>&1 || true
+            if docker inspect redis_prod >/dev/null 2>&1; then
+              REDIS_STATE="$(docker inspect --format='{{.State.Status}}' redis_prod 2>/dev/null || true)"
+              if [ "$REDIS_STATE" != "running" ]; then
+                docker start redis_prod >/dev/null
+                echo "redis_prod started."
+              fi
+            else
+              $COMPOSE up -d --no-deps redis
             fi
+
+            TARGET_NET="twitter-prod_app_network"
+            docker network inspect "$TARGET_NET" >/dev/null 2>&1 || docker network create "$TARGET_NET"
+            docker network connect "$TARGET_NET" redis_prod >/dev/null 2>&1 || true
+            docker network connect "$TARGET_NET" mongodb_prod >/dev/null 2>&1 || true
 
             $COMPOSE up -d --no-deps socket-server
             $COMPOSE up -d --no-deps nextjs-twitter
