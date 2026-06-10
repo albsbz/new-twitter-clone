@@ -25,7 +25,8 @@ services:
       - REDIS_URL=redis://redis:6379
       - NEXT_PUBLIC_BASIC_URL=http://localhost:3000
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -33,6 +34,11 @@ services:
     image: redis:alpine
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   nextjs:
     build:
