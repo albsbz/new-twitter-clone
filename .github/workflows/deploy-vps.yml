@@ -318,7 +318,18 @@ jobs:
 
             docker network connect "$TARGET_NET" socket_server_prod >/dev/null 2>&1 || true
 
-            $COMPOSE up -d --no-deps nextjs-twitter
+            if docker inspect nextjs_twitter_prod >/dev/null 2>&1; then
+              APP_STATE="$(docker inspect --format='{{.State.Status}}' nextjs_twitter_prod 2>/dev/null || true)"
+              if [ "$APP_STATE" != "running" ]; then
+                docker start nextjs_twitter_prod >/dev/null
+                echo "nextjs_twitter_prod started."
+              fi
+            else
+              $COMPOSE up -d --no-deps nextjs-twitter
+            fi
+
+            docker network connect "$TARGET_NET" nextjs_twitter_prod >/dev/null 2>&1 || true
+
             $COMPOSE up -d --no-deps caddy
 
             DEPLOY_OK=0
