@@ -12,10 +12,22 @@ export interface AuthorPopulated {
   name: string;
 }
 
-export interface CommentWithAuthor extends Omit<CommentEntity, 'authorId'> {
+export interface PostPopulated {
+  _id: mongoose.Types.ObjectId;
+  author: mongoose.Types.ObjectId;
+}
+
+export interface CommentWithAuthor extends Omit<CommentEntity, "authorId"> {
   authorId: AuthorPopulated;
 }
 
+export interface CommentWithAuthorAndPostAuthor extends Omit<
+  CommentEntity,
+  "authorId" | "postId"
+> {
+  authorId: AuthorPopulated;
+  postId: PostPopulated;
+}
 export interface CreateCommentData {
   body: string;
   postId: string;

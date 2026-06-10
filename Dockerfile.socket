@@ -1,0 +1,10 @@
+FROM node:20-alpine
+WORKDIR /app
+# Копируем только то, что нужно для запуска
+COPY package*.json ./
+RUN npm install
+COPY socket ./socket
+# Если серверу нужны другие файлы (например, конфиг БД), скопируй их тоже
+# COPY lib ./lib 
+
+CMD ["npx", "ts-node", "--compiler-options", "{\"module\":\"CommonJS\",\"moduleResolution\":\"Node\"}", "socket/server.ts"]

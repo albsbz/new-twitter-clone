@@ -9,7 +9,7 @@ function Notifications() {
 
   useEffect(() => {
     if (notifications.length === 0) return;
-    const timer = setTimeout(clearNotifications, 1000);
+    const timer = setTimeout(clearNotifications, 3000);
 
     Logger.log("Current notifications:", notifications);
     return () => clearTimeout(timer);
