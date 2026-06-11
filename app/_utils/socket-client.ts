@@ -3,7 +3,7 @@ const url = process.env.NEXT_PUBLIC_BASIC_URL;
 if (!url) {
   throw new Error("NEXT_PUBLIC_BASIC_URL is not defined");
 }
-const socket = io(url.slice(0, -1), {
+const socket = io("https://twitter.alexkamens.org", {
   withCredentials: true,
   autoConnect: true,
   reconnection: true,
@@ -16,7 +16,6 @@ socket.on("connect", () => {
 
 socket.on("connect_error", (error) => {
   if (error.message !== "Unauthorized") {
-    console.error("Socket connection error data:", error);
     console.error("Socket connection error:", error.message);
   }
 });
