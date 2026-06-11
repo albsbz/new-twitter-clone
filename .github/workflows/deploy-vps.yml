@@ -291,6 +291,8 @@ jobs:
 
             $COMPOSE pull nextjs-twitter
 
+            $COMPOSE up -d --force-recreate nextjs-twitter
+
             if docker inspect redis_prod >/dev/null 2>&1; then
               REDIS_STATE="$(docker inspect --format='{{.State.Status}}' redis_prod 2>/dev/null || true)"
               if [ "$REDIS_STATE" != "running" ]; then
