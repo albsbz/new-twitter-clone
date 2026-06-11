@@ -1,6 +1,9 @@
 import { io } from "socket.io-client";
-
-const socket = io(process.env.NEXT_PUBLIC_BASIC_URL, {
+const url = process.env.NEXT_PUBLIC_BASIC_URL;
+if (!url) {
+  throw new Error("NEXT_PUBLIC_BASIC_URL is not defined");
+}
+const socket = io(url.slice(0, -1), {
   withCredentials: true,
   autoConnect: true,
   reconnection: true,
