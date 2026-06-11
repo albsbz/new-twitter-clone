@@ -93,9 +93,6 @@ services:
       retries: 5
     networks:
       - app_network
-    default:
-      aliases:
-        - nextjs-twitter
 
   nextjs-landing:
     image: ${APP_IMAGE_LANDING:?APP_IMAGE_LANDING is required}
@@ -117,9 +114,6 @@ services:
     image: caddy:2-alpine
     container_name: caddy_proxy
     restart: unless-stopped
-    depends_on:
-      nextjs-twitter:
-        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
