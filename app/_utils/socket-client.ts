@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const socket = io(`${process.env.NEXT_PUBLIC_BASIC_URL}:4000`, {
+const socket = io(`${process.env.DOMAIN_TWITTER}:4000`, {
   withCredentials: true,
   autoConnect: true,
   reconnection: true,
