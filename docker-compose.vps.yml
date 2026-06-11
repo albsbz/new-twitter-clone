@@ -1,5 +1,4 @@
 services:
-  # 1. База данных
   mongo:
     image: mongo:latest
     container_name: mongodb_prod
@@ -14,25 +13,36 @@ services:
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand({ ping: 1 })' --quiet"]
+      test:
+        ["CMD-SHELL", "mongosh --eval 'db.adminCommand({ ping: 1 })' --quiet"]
       interval: 15s
       timeout: 5s
       retries: 5
     networks:
       - app_network
 
-  # 2. Redis (кэш и шина событий)
   redis:
     image: redis:7-alpine
     container_name: redis_prod
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD:?REDIS_PASSWORD is required}",
+      ]
     volumes:
       - redis_data:/data
+    # healthcheck:
+    #   test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 -a \"${REDIS_PASSWORD}\" ping | grep -q PONG"]
+    #   interval: 15s
+    #   timeout: 5s
+    #   retries: 5
     networks:
       - app_network
 
-  # 3. Socket.io сервер
   socket-server:
     build:
       context: .
@@ -44,6 +54,10 @@ services:
         condition: service_started
     env_file:
       - .env.production
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL}
     expose:
       - "4000"
     healthcheck:
@@ -54,9 +68,8 @@ services:
     networks:
       - app_network
 
-  # 4. Основное приложение (Next.js)
   nextjs-twitter:
-    image: ${APP_IMAGE_TWITTER}
+    image: ${APP_IMAGE_TWITTER:?APP_IMAGE_TWITTER is required}
     container_name: nextjs_twitter_prod
     restart: unless-stopped
     depends_on:
@@ -68,6 +81,8 @@ services:
         condition: service_healthy
     env_file:
       - .env.production
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     expose:
       - "3000"
     healthcheck:
@@ -78,9 +93,8 @@ services:
     networks:
       - app_network
 
-  # 5. Лендинг (Next.js)
   nextjs-landing:
-    image: ${APP_IMAGE_LANDING}
+    image: ${APP_IMAGE_LANDING:?APP_IMAGE_LANDING is required}
     container_name: nextjs_landing_prod
     restart: unless-stopped
     env_file:
@@ -95,7 +109,6 @@ services:
     networks:
       - app_network
 
-  # 6. Прокси-сервер (Caddy)
   caddy:
     image: caddy:2-alpine
     container_name: caddy_proxy
@@ -106,6 +119,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    env_file:
+      - .env.production
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
