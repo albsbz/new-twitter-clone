@@ -16,6 +16,7 @@ socket.on("connect", () => {
 
 socket.on("connect_error", (error) => {
   if (error.message !== "Unauthorized") {
+    console.error("Socket connection error data:", error);
     console.error("Socket connection error:", error.message);
   }
 });
