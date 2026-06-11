@@ -179,6 +179,8 @@ jobs:
             VPS_APP_DIR="$(printf '%s' "$VPS_APP_DIR" | tr -d '\r\n')"
 
             cd "$VPS_APP_DIR"
+            
+            COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
 
             if [ -z "$DOMAIN_TWITTER" ]; then
               echo "DOMAIN_TWITTER is empty. Set the secret in the twitter repository."
@@ -278,8 +280,7 @@ jobs:
               exit 1
             fi
 
-            COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
-
+           
             $COMPOSE pull nextjs-twitter
 
             $COMPOSE up -d --force-recreate nextjs-twitter
