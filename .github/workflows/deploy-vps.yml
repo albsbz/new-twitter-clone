@@ -268,16 +268,7 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
             # Ensure existing mongo container is available for the app.
-            if docker inspect mongodb_prod >/dev/null 2>&1; then
-              MONGO_STATE="$(docker inspect --format='{{.State.Status}}' mongodb_prod 2>/dev/null || true)"
-              if [ "$MONGO_STATE" != "running" ]; then
-                docker start mongodb_prod >/dev/null
-                echo "mongodb_prod started."
-              fi
-            else
-              echo "mongodb_prod container not found on VPS. Bootstrap shared stack first (infra deploy + initial stack up)."
-              exit 1
-            fi
+            $COMPOSE up -d mongodb_prod 
 
             # Validate Mongo auth before deploying app container.
             if ! docker exec mongodb_prod mongosh "$MONGO_CHECK_URI" --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; then
@@ -293,15 +284,8 @@ jobs:
 
             $COMPOSE up -d --force-recreate nextjs-twitter
 
-            if docker inspect redis_prod >/dev/null 2>&1; then
-              REDIS_STATE="$(docker inspect --format='{{.State.Status}}' redis_prod 2>/dev/null || true)"
-              if [ "$REDIS_STATE" != "running" ]; then
-                docker start redis_prod >/dev/null
-                echo "redis_prod started."
-              fi
-            else
-              $COMPOSE up -d --no-deps redis
-            fi
+            $COMPOSE up -d  redis_prod
+
 
             TARGET_NET="twitter-prod_app_network"
             docker network inspect "$TARGET_NET" >/dev/null 2>&1 || docker network create "$TARGET_NET"
