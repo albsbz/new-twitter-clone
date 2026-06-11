@@ -18,6 +18,7 @@ const io = new Server(httpServer, {
 });
 
 io.use((socket, next) => {
+  console.log("Namespace:", socket.nsp.name);
   const rawCookie = socket.handshake.headers.cookie || "";
   const cookies = parse(rawCookie);
   const token = cookies["token"];
