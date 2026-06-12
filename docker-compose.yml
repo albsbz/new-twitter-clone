@@ -24,6 +24,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - NEXT_PUBLIC_BASIC_URL=http://localhost:3000
+      - NEXT_PUBLIC_SOCKET_URL=http://localhost:4000
     depends_on:
       redis:
         condition: service_healthy
@@ -46,6 +47,7 @@ services:
       args:
         NEXT_PUBLIC_EXTERNAL_URL: ${NEXT_PUBLIC_EXTERNAL_URL:-https://dummyjson.com}
         NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:4000}
         MONGODB_URI: mongodb://root:password@mongo:27017/admin
     container_name: nextjs_app
     ports:
@@ -79,6 +81,7 @@ services:
       args:
         NEXT_PUBLIC_EXTERNAL_URL: ${NEXT_PUBLIC_EXTERNAL_URL}
         NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
     container_name: nextjs_app_prod
     ports:
       - "3000:3000"
@@ -95,6 +98,7 @@ services:
       EMAIL_SERVER_PASSWORD: ${EMAIL_SERVER_PASSWORD}
       NEXT_PUBLIC_EXTERNAL_URL: ${NEXT_PUBLIC_EXTERNAL_URL}
       NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
       NODE_ENV: production
     command: sh -c "npm run seed && npm run start"
     networks:

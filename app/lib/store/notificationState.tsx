@@ -23,10 +23,11 @@ const useNotificationState = create<{
     socket.off("notification");
     socket.on("notification", (data: { message: string; postId: string }) => {
       Logger.log("Received notification from socket:", data);
+      const text  = JSON.parse(data.message).text;
       set((state) => ({
         notifications: [
           ...state.notifications,
-          { message: data.message, type: "info" },
+          { message: text, type: "info" },
         ],
       }));
     });
