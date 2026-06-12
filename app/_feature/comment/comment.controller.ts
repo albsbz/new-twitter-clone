@@ -65,11 +65,11 @@ class CommentController extends BaseController<CommentsResponseDto> {
         authorId: userId,
       });
 
-      await redis.publish(
+      redis.publish(
         "NEW_COMMENT",
         JSON.stringify({
           authorId: newComment.postAuthorId,
-          text: newComment.body,
+          text: `${userName} commented on your post: "${newComment.body}"`,
           postId: newComment.id,
         }),
       );

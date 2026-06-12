@@ -106,6 +106,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_EXTERNAL_URL=${{ secrets.NEXT_PUBLIC_EXTERNAL_URL }}
             NEXT_PUBLIC_BASIC_URL=${{ secrets.NEXT_PUBLIC_BASIC_URL }}
+            NEXT_PUBLIC_SOCKET_URL=${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
             MONGODB_URI=${{ env.BUILD_MONGODB_URI }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             EMAIL_SERVER_HOST=${{ secrets.EMAIL_SERVER_HOST }}
@@ -158,6 +159,7 @@ jobs:
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
           DOMAIN_TWITTER: ${{ secrets.DOMAIN_TWITTER }}
           NEXT_PUBLIC_BASIC_URL: ${{ secrets.NEXT_PUBLIC_BASIC_URL }}
+          NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
@@ -173,7 +175,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN_TWITTER,NEXT_PUBLIC_BASIC_URL,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,MONGODB_URI,JWT_SECRET,REDIS_PASSWORD,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
+          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN_TWITTER,NEXT_PUBLIC_BASIC_URL,NEXT_PUBLIC_SOCKET_URL,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,MONGODB_URI,JWT_SECRET,REDIS_PASSWORD,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
           script: |
             set -e
             VPS_APP_DIR="$(printf '%s' "$VPS_APP_DIR" | tr -d '\r\n')"
@@ -186,6 +188,10 @@ jobs:
             fi
             if [ -z "$NEXT_PUBLIC_BASIC_URL" ]; then
               echo "NEXT_PUBLIC_BASIC_URL is empty. Set this secret in the twitter repository."
+              exit 1
+            fi
+            if [ -z "$NEXT_PUBLIC_SOCKET_URL" ]; then
+              echo "NEXT_PUBLIC_SOCKET_URL is empty. Set this secret in the twitter repository."
               exit 1
             fi
             if [ -z "$MONGODB_URI" ] || [ -z "$JWT_SECRET" ]; then
@@ -237,6 +243,7 @@ jobs:
 
             update_env DOMAIN_TWITTER "$DOMAIN_TWITTER"
             update_env NEXT_PUBLIC_BASIC_URL "$NEXT_PUBLIC_BASIC_URL"
+            update_env NEXT_PUBLIC_SOCKET_URL "$NEXT_PUBLIC_SOCKET_URL"
             update_env APP_IMAGE_TWITTER "$APP_IMAGE_TWITTER"
             update_env MONGODB_URI "$MONGODB_URI_EFFECTIVE"
             update_env MONGO_INITDB_ROOT_USERNAME "$MONGO_INITDB_ROOT_USERNAME"
