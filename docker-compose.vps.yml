@@ -60,12 +60,12 @@ services:
       NEXT_PUBLIC_BASIC_URL: ${NEXT_PUBLIC_BASIC_URL}
     expose:
       - "4000"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:4000 || exit 1"]
-      interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+      # healthcheck:
+      #   test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:4000 || exit 1"]
+      #   interval: 20s
+      #   timeout: 10s
+      #   retries: 5
+      #   start_period: 40s
     networks:
       - app_network
 
@@ -79,7 +79,7 @@ services:
       redis:
         condition: service_started
       socket-server:
-        condition: service_healthy
+        condition: service_started
     env_file:
       - .env.production
     environment:
