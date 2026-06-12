@@ -8,7 +8,11 @@ const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
 console.log("Connecting to Redis at:", redisUrl);
 const redis = new Redis(redisUrl);
 
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  res.writeHead(200);
+  res.end("ok");
+});
+
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.NEXT_PUBLIC_BASIC_URL,
