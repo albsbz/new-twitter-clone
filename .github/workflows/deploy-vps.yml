@@ -270,7 +270,7 @@ jobs:
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
             # Ensure existing mongo container is available for the app.
-            $COMPOSE up -d mongodb_prod 
+            $COMPOSE up -d mongodb
 
             # Validate Mongo auth before deploying app container.
             if ! docker exec mongodb_prod mongosh "$MONGO_CHECK_URI" --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; then
@@ -285,7 +285,7 @@ jobs:
 
             $COMPOSE up -d --force-recreate nextjs-twitter
 
-            $COMPOSE up -d  redis_prod
+            $COMPOSE up -d  redis
 
 
             TARGET_NET="twitter-prod_app_network"
