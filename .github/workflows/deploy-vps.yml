@@ -179,61 +179,47 @@ jobs:
           script: |
             set -e
             VPS_APP_DIR="$(printf '%s' "$VPS_APP_DIR" | tr -d '\r\n')"
-
             cd "$VPS_APP_DIR"
 
-            if [ -z "$DOMAIN_TWITTER" ]; then
-              echo "DOMAIN_TWITTER is empty. Set the secret in the twitter repository."
-              exit 1
-            fi
-            if [ -z "$NEXT_PUBLIC_BASIC_URL" ]; then
-              echo "NEXT_PUBLIC_BASIC_URL is empty. Set this secret in the twitter repository."
-              exit 1
-            fi
-            if [ -z "$NEXT_PUBLIC_SOCKET_URL" ]; then
-              echo "NEXT_PUBLIC_SOCKET_URL is empty. Set this secret in the twitter repository."
-              exit 1
-            fi
-            if [ -z "$MONGODB_URI" ] || [ -z "$JWT_SECRET" ]; then
-              echo "MONGODB_URI or JWT_SECRET is empty. Set required secrets in the twitter repository."
-              exit 1
-            fi
-            if [ -z "$REDIS_PASSWORD" ]; then
-              echo "REDIS_PASSWORD is empty. Set required Redis secret in the twitter repository."
-              exit 1
-            fi
-            if [ -z "$MONGO_INITDB_ROOT_USERNAME" ] || [ -z "$MONGO_INITDB_ROOT_PASSWORD" ]; then
-              echo "MONGO_INITDB_ROOT_USERNAME or MONGO_INITDB_ROOT_PASSWORD is empty. Set required Mongo root secrets in the twitter repository."
+            # --- Validate required secrets ---
+            for VAR in DOMAIN_TWITTER NEXT_PUBLIC_BASIC_URL NEXT_PUBLIC_SOCKET_URL \
+                       MONGODB_URI JWT_SECRET REDIS_PASSWORD \
+                       MONGO_INITDB_ROOT_USERNAME MONGO_INITDB_ROOT_PASSWORD; do
+              eval "VAL=\$$VAR"
+              if [ -z "$VAL" ]; then
+                echo "${VAR} is empty. Set the secret in the twitter repository."
+                exit 1
+              fi
+            done
+
+            if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
+              echo "docker-compose.vps.yml or Caddyfile not found. Run infra deploy first."
               exit 1
             fi
 
-            MONGODB_URI_EFFECTIVE="$MONGODB_URI"
-            if echo "$MONGODB_URI_EFFECTIVE" | grep -Eq 'mongodb://([^@/]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/'; then
-              MONGODB_URI_EFFECTIVE="$(echo "$MONGODB_URI_EFFECTIVE" | sed -E 's#(mongodb://([^@/]+@)?)(localhost|127\.0\.0\.1)(:[0-9]+)?/#\1mongodb_prod\4/#')"
-              echo "MONGODB_URI host normalized to mongodb_prod for container networking."
+            # --- Ensure mongodb_prod exists (one-time bootstrap guard) ---
+            if ! docker inspect mongodb_prod >/dev/null 2>&1; then
+              echo "mongodb_prod container not found. Bootstrap the shared stack first (infra deploy + initial stack up)."
+              exit 1
             fi
 
-            # Always derive runtime URI from Mongo root secrets to avoid stale URI credentials.
+            # --- Build effective env values ---
             MONGODB_URI_EFFECTIVE="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb_prod:27017/admin?authSource=admin"
             MONGO_CHECK_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/admin?authSource=admin"
             REDIS_URL_EFFECTIVE="redis://:${REDIS_PASSWORD}@redis:6379"
 
-            if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
-              echo "docker-compose.vps.yml or Caddyfile not found in VPS_APP_DIR. Run infra deploy first."
+            # --- Validate Mongo auth ---
+            if ! docker exec mongodb_prod mongosh "$MONGO_CHECK_URI" --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; then
+              echo "Mongo authentication check failed. Existing Mongo data volume may use different credentials than current secrets."
+              docker logs --tail 120 mongodb_prod || true
               exit 1
             fi
 
-            # If .env.production does not exist, create with DOMAIN_TWITTER from secrets
-            if [ ! -f .env.production ]; then
-              umask 077
-              printf 'DOMAIN_TWITTER=%s\n' "$DOMAIN_TWITTER" > .env.production
-              chmod 600 .env.production
-              echo ".env.production created with DOMAIN_TWITTER from secrets."
-            fi
-
+            # --- Write .env.production ---
+            umask 077
+            touch .env.production
             update_env() {
-              KEY="$1"
-              VALUE="$2"
+              KEY="$1"; VALUE="$2"
               if grep -q "^${KEY}=" .env.production; then
                 sed -i "s|^${KEY}=.*|${KEY}=${VALUE}|" .env.production
               else
@@ -241,116 +227,35 @@ jobs:
               fi
             }
 
-            update_env DOMAIN_TWITTER "$DOMAIN_TWITTER"
-            update_env NEXT_PUBLIC_BASIC_URL "$NEXT_PUBLIC_BASIC_URL"
-            update_env NEXT_PUBLIC_SOCKET_URL "$NEXT_PUBLIC_SOCKET_URL"
-            update_env APP_IMAGE_TWITTER "$APP_IMAGE_TWITTER"
-            update_env MONGODB_URI "$MONGODB_URI_EFFECTIVE"
+            update_env DOMAIN_TWITTER            "$DOMAIN_TWITTER"
+            update_env NEXT_PUBLIC_BASIC_URL      "$NEXT_PUBLIC_BASIC_URL"
+            update_env NEXT_PUBLIC_SOCKET_URL     "$NEXT_PUBLIC_SOCKET_URL"
+            update_env APP_IMAGE_TWITTER          "$APP_IMAGE_TWITTER"
+            update_env MONGODB_URI                "$MONGODB_URI_EFFECTIVE"
             update_env MONGO_INITDB_ROOT_USERNAME "$MONGO_INITDB_ROOT_USERNAME"
             update_env MONGO_INITDB_ROOT_PASSWORD "$MONGO_INITDB_ROOT_PASSWORD"
-            update_env JWT_SECRET "$JWT_SECRET"
-            update_env REDIS_PASSWORD "$REDIS_PASSWORD"
-            update_env REDIS_URL "$REDIS_URL_EFFECTIVE"
-            update_env EMAIL_SERVER_HOST "$EMAIL_SERVER_HOST"
-            update_env EMAIL_SERVER_PORT "$EMAIL_SERVER_PORT"
-            update_env EMAIL_SERVER_USER "$EMAIL_SERVER_USER"
-            update_env EMAIL_SERVER_PASSWORD "$EMAIL_SERVER_PASSWORD"
-
+            update_env JWT_SECRET                 "$JWT_SECRET"
+            update_env REDIS_PASSWORD             "$REDIS_PASSWORD"
+            update_env REDIS_URL                  "$REDIS_URL_EFFECTIVE"
+            update_env EMAIL_SERVER_HOST          "$EMAIL_SERVER_HOST"
+            update_env EMAIL_SERVER_PORT          "$EMAIL_SERVER_PORT"
+            update_env EMAIL_SERVER_USER          "$EMAIL_SERVER_USER"
+            update_env EMAIL_SERVER_PASSWORD      "$EMAIL_SERVER_PASSWORD"
             chmod 600 .env.production
 
-            SERVICES="$(docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod config --services || true)"
-            if ! echo "$SERVICES" | grep -qx "redis"; then
-              echo "Service 'redis' not found in docker-compose.vps.yml on VPS."
-              echo "Detected services:"
-              echo "$SERVICES"
-              exit 1
-            fi
-            if ! echo "$SERVICES" | grep -qx "socket-server"; then
-              echo "Service 'socket-server' not found in docker-compose.vps.yml on VPS."
-              echo "Detected services:"
-              echo "$SERVICES"
-              exit 1
-            fi
-
+            # --- Deploy ---
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-
-            # Ensure existing mongo container is available for the app.
-            if docker inspect mongodb_prod >/dev/null 2>&1; then
-              MONGO_STATE="$(docker inspect --format='{{.State.Status}}' mongodb_prod 2>/dev/null || true)"
-              if [ "$MONGO_STATE" != "running" ]; then
-                docker start mongodb_prod >/dev/null
-                echo "mongodb_prod started."
-              fi
-            else
-              echo "mongodb_prod container not found on VPS. Bootstrap shared stack first (infra deploy + initial stack up)."
-              exit 1
-            fi
-
-            # Validate Mongo auth before deploying app container.
-            if ! docker exec mongodb_prod mongosh "$MONGO_CHECK_URI" --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; then
-              echo "Mongo authentication check failed. Existing Mongo data volume may use different credentials than current secrets."
-              echo "Recent Mongo logs:"
-              docker logs --tail 120 mongodb_prod || true
-              exit 1
-            fi
 
             COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
 
-            $COMPOSE pull nextjs-twitter
+            # Pull only the images that come from a registry (skip build-only services)
+            $COMPOSE pull nextjs-twitter nextjs-landing
 
-            $COMPOSE up -d --force-recreate nextjs-twitter
+            # Let Compose bring everything to the declared state.
+            # --remove-orphans cleans up stale containers from previous deploys.
+            $COMPOSE up -d --remove-orphans
 
-            if docker inspect redis_prod >/dev/null 2>&1; then
-              REDIS_STATE="$(docker inspect --format='{{.State.Status}}' redis_prod 2>/dev/null || true)"
-              if [ "$REDIS_STATE" != "running" ]; then
-                docker start redis_prod >/dev/null
-                echo "redis_prod started."
-              fi
-            else
-              $COMPOSE up -d --no-deps redis
-            fi
-
-            TARGET_NET="twitter-prod_app_network"
-            docker network inspect "$TARGET_NET" >/dev/null 2>&1 || docker network create "$TARGET_NET"
-            docker network connect "$TARGET_NET" redis_prod >/dev/null 2>&1 || true
-            docker network connect "$TARGET_NET" mongodb_prod >/dev/null 2>&1 || true
-
-            if docker inspect socket_server_prod >/dev/null 2>&1; then
-              SOCKET_STATE="$(docker inspect --format='{{.State.Status}}' socket_server_prod 2>/dev/null || true)"
-              if [ "$SOCKET_STATE" != "running" ]; then
-                docker start socket_server_prod >/dev/null
-                echo "socket_server_prod started."
-              fi
-            else
-              $COMPOSE up -d --no-deps socket-server
-            fi
-
-            docker network connect "$TARGET_NET" socket_server_prod >/dev/null 2>&1 || true
-
-            if docker inspect nextjs_twitter_prod >/dev/null 2>&1; then
-              APP_STATE="$(docker inspect --format='{{.State.Status}}' nextjs_twitter_prod 2>/dev/null || true)"
-              if [ "$APP_STATE" != "running" ]; then
-                docker start nextjs_twitter_prod >/dev/null
-                echo "nextjs_twitter_prod started."
-              fi
-            else
-              $COMPOSE up -d --no-deps nextjs-twitter
-            fi
-
-            docker network connect "$TARGET_NET" nextjs_twitter_prod >/dev/null 2>&1 || true
-
-            if docker inspect caddy_proxy >/dev/null 2>&1; then
-              CADDY_STATE="$(docker inspect --format='{{.State.Status}}' caddy_proxy 2>/dev/null || true)"
-              if [ "$CADDY_STATE" != "running" ]; then
-                docker start caddy_proxy >/dev/null
-                echo "caddy_proxy started."
-              fi
-            else
-              $COMPOSE up -d --no-deps caddy
-            fi
-
-            docker network connect "$TARGET_NET" caddy_proxy >/dev/null 2>&1 || true
-
+            # --- Healthcheck ---
             DEPLOY_OK=0
             for i in $(seq 1 36); do
               STATUS="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' nextjs_twitter_prod 2>/dev/null || true)"
@@ -363,14 +268,9 @@ jobs:
 
             if [ "$DEPLOY_OK" -ne 1 ]; then
               echo "Deploy healthcheck failed."
-              echo "Container state:"
               docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}} exit={{.State.ExitCode}} restarting={{.State.Restarting}}' nextjs_twitter_prod || true
-              echo "Recent container logs:"
               docker logs --tail 120 nextjs_twitter_prod || true
-              echo "Mongo container state:"
-              docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}} exit={{.State.ExitCode}} restarting={{.State.Restarting}}' mongodb_prod || true
-              echo "Mongo networks:"
-              docker inspect --format='{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s\n" $k}}{{end}}' mongodb_prod || true
+              docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' mongodb_prod || true
               exit 1
             fi
 
