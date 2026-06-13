@@ -221,7 +221,7 @@ jobs:
               fi
             }
 
-            MONGODB_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb_prod:27017/admin?authSource=admin"
+            MONGODB_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb_prod:27017/new-twitter-clone?authSource=admin"
             REDIS_URL="redis://:${REDIS_PASSWORD}@redis_prod:6379"
 
             update_env APP_IMAGE_TWITTER          "$APP_IMAGE_TWITTER"
