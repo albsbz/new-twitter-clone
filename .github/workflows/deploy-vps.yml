@@ -138,7 +138,7 @@ jobs:
           script: |
             mkdir -p "$(printf '%s' "$VPS_APP_DIR" | tr -d '\r\n')"
 
-      - name: Sync deploy files to VPS
+      - name: Sync twitter deploy files to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -146,7 +146,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          source: docker-compose.vps.yml,Caddyfile,Dockerfile.socket,package.json,package-lock.json,socket
+          source: docker-compose.vps.yml,Dockerfile.socket,package.json,package-lock.json,socket
           target: ${{ secrets.VPS_APP_DIR }}
           overwrite: true
 
@@ -157,14 +157,12 @@ jobs:
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
-          DOMAIN_TWITTER: ${{ secrets.DOMAIN_TWITTER }}
-          NEXT_PUBLIC_BASIC_URL: ${{ secrets.NEXT_PUBLIC_BASIC_URL }}
-          NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          NEXT_PUBLIC_BASIC_URL: ${{ secrets.NEXT_PUBLIC_BASIC_URL }}
+          NEXT_PUBLIC_SOCKET_URL: ${{ secrets.NEXT_PUBLIC_SOCKET_URL }}
           EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
           EMAIL_SERVER_PORT: ${{ secrets.EMAIL_SERVER_PORT }}
           EMAIL_SERVER_USER: ${{ secrets.EMAIL_SERVER_USER }}
@@ -175,16 +173,16 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,DOMAIN_TWITTER,NEXT_PUBLIC_BASIC_URL,NEXT_PUBLIC_SOCKET_URL,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,MONGODB_URI,JWT_SECRET,REDIS_PASSWORD,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
+          envs: APP_IMAGE_TWITTER,GHCR_USERNAME,GHCR_TOKEN,VPS_APP_DIR,MONGO_INITDB_ROOT_USERNAME,MONGO_INITDB_ROOT_PASSWORD,JWT_SECRET,REDIS_PASSWORD,NEXT_PUBLIC_BASIC_URL,NEXT_PUBLIC_SOCKET_URL,EMAIL_SERVER_HOST,EMAIL_SERVER_PORT,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD
           script: |
             set -e
             VPS_APP_DIR="$(printf '%s' "$VPS_APP_DIR" | tr -d '\r\n')"
             cd "$VPS_APP_DIR"
 
             # --- Validate required secrets ---
-            for VAR in DOMAIN_TWITTER NEXT_PUBLIC_BASIC_URL NEXT_PUBLIC_SOCKET_URL \
-                       MONGODB_URI JWT_SECRET REDIS_PASSWORD \
-                       MONGO_INITDB_ROOT_USERNAME MONGO_INITDB_ROOT_PASSWORD; do
+            for VAR in MONGO_INITDB_ROOT_USERNAME MONGO_INITDB_ROOT_PASSWORD \
+                       JWT_SECRET REDIS_PASSWORD \
+                       NEXT_PUBLIC_BASIC_URL NEXT_PUBLIC_SOCKET_URL; do
               eval "VAL=\$$VAR"
               if [ -z "$VAL" ]; then
                 echo "${VAR} is empty. Set the secret in the twitter repository."
@@ -192,30 +190,26 @@ jobs:
               fi
             done
 
-            if [ ! -f docker-compose.vps.yml ] || [ ! -f Caddyfile ]; then
-              echo "docker-compose.vps.yml or Caddyfile not found. Run infra deploy first."
+            if [ ! -f docker-compose.vps.yml ]; then
+              echo "docker-compose.vps.yml not found in VPS_APP_DIR."
               exit 1
             fi
 
-            # --- Ensure mongodb_prod exists (one-time bootstrap guard) ---
-            if ! docker inspect mongodb_prod >/dev/null 2>&1; then
-              echo "mongodb_prod container not found. Bootstrap the shared stack first (infra deploy + initial stack up)."
+            # --- Guard: infra network must exist ---
+            if ! docker network inspect infra_app_network >/dev/null 2>&1; then
+              echo "infra_app_network not found. Run vps-infra deploy first."
               exit 1
             fi
-
-            # --- Build effective env values ---
-            MONGODB_URI_EFFECTIVE="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb_prod:27017/admin?authSource=admin"
-            MONGO_CHECK_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/admin?authSource=admin"
-            REDIS_URL_EFFECTIVE="redis://:${REDIS_PASSWORD}@redis:6379"
 
             # --- Validate Mongo auth ---
+            MONGO_CHECK_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/admin?authSource=admin"
             if ! docker exec mongodb_prod mongosh "$MONGO_CHECK_URI" --quiet --eval 'db.adminCommand({ ping: 1 })' >/dev/null 2>&1; then
-              echo "Mongo authentication check failed. Existing Mongo data volume may use different credentials than current secrets."
-              docker logs --tail 120 mongodb_prod || true
+              echo "Mongo authentication check failed."
+              docker logs --tail 60 mongodb_prod || true
               exit 1
             fi
 
-            # --- Write .env.production ---
+            # --- Write .env.production (twitter-owned keys only) ---
             umask 077
             touch .env.production
             update_env() {
@@ -227,16 +221,18 @@ jobs:
               fi
             }
 
-            update_env DOMAIN_TWITTER            "$DOMAIN_TWITTER"
-            update_env NEXT_PUBLIC_BASIC_URL      "$NEXT_PUBLIC_BASIC_URL"
-            update_env NEXT_PUBLIC_SOCKET_URL     "$NEXT_PUBLIC_SOCKET_URL"
+            MONGODB_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb_prod:27017/admin?authSource=admin"
+            REDIS_URL="redis://:${REDIS_PASSWORD}@redis_prod:6379"
+
             update_env APP_IMAGE_TWITTER          "$APP_IMAGE_TWITTER"
-            update_env MONGODB_URI                "$MONGODB_URI_EFFECTIVE"
+            update_env MONGODB_URI                "$MONGODB_URI"
             update_env MONGO_INITDB_ROOT_USERNAME "$MONGO_INITDB_ROOT_USERNAME"
             update_env MONGO_INITDB_ROOT_PASSWORD "$MONGO_INITDB_ROOT_PASSWORD"
             update_env JWT_SECRET                 "$JWT_SECRET"
             update_env REDIS_PASSWORD             "$REDIS_PASSWORD"
-            update_env REDIS_URL                  "$REDIS_URL_EFFECTIVE"
+            update_env REDIS_URL                  "$REDIS_URL"
+            update_env NEXT_PUBLIC_BASIC_URL      "$NEXT_PUBLIC_BASIC_URL"
+            update_env NEXT_PUBLIC_SOCKET_URL     "$NEXT_PUBLIC_SOCKET_URL"
             update_env EMAIL_SERVER_HOST          "$EMAIL_SERVER_HOST"
             update_env EMAIL_SERVER_PORT          "$EMAIL_SERVER_PORT"
             update_env EMAIL_SERVER_USER          "$EMAIL_SERVER_USER"
@@ -248,11 +244,7 @@ jobs:
 
             COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
 
-            # Pull only the images that come from a registry (skip build-only services)
-            $COMPOSE pull nextjs-twitter nextjs-landing
-
-            # Let Compose bring everything to the declared state.
-            # --remove-orphans cleans up stale containers from previous deploys.
+            $COMPOSE pull nextjs-twitter
             $COMPOSE up -d --remove-orphans
 
             # --- Healthcheck ---
@@ -270,7 +262,6 @@ jobs:
               echo "Deploy healthcheck failed."
               docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}} exit={{.State.ExitCode}} restarting={{.State.Restarting}}' nextjs_twitter_prod || true
               docker logs --tail 120 nextjs_twitter_prod || true
-              docker inspect --format='status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}' mongodb_prod || true
               exit 1
             fi
 
