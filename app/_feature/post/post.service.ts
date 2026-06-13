@@ -62,6 +62,71 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
     return response;
   }
 
+  async findByUserId({
+    userId,
+    limit,
+    skip,
+  }: {
+    userId: string;
+    limit: number;
+    skip: number;
+  }): Promise<AllPostsResponseDto> {
+    await this.connect();
+    const [result] = await Post.aggregate([
+      {
+        $match: {
+          author: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $facet: {
+          posts: [{ $skip: skip }, { $limit: limit }],
+          total: [{ $count: "count" }],
+        },
+      },
+      {
+        $project: {
+          posts: {
+            $map: {
+              input: "$posts",
+              as: "post",
+              in: {
+                id: { $toString: "$$post._id" },
+                title: "$$post.title",
+                body: "$$post.body",
+                author: { $toString: "$$post.author" },
+                reactions: "$$post.reactions",
+                views: "$$post.views",
+                createdAt: "$$post.createdAt",
+                updatedAt: "$$post.updatedAt",
+                tags: {
+                  $map: {
+                    input: { $ifNull: ["$$post.tags", []] },
+                    as: "tag",
+                    in: {
+                      id: { $toString: "$$tag._id" },
+                      body: "$$tag.body",
+                      date: "$$tag.date",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          total: 1,
+        },
+      },
+    ]);
+
+    const total = result?.total?.[0]?.count ?? 0;
+    const response: AllPostsResponseDto = {
+      posts: result?.posts ?? [],
+      limit,
+      skip,
+      total,
+    };
+    return response;
+  }
   async findById(id: PostEntity["id"]): Promise<PostResponseDto> {
     await this.connect();
     if (!mongoose.Types.ObjectId.isValid(id)) {

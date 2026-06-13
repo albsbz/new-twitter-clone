@@ -70,10 +70,29 @@ class PostController extends BaseController<PostEntity> {
     }
   }
 
-  async getAll({page, limit}: {page: number, limit: number}) {
+  async getAll({ page, limit }: { page: number; limit: number }) {
     try {
       const skip = (page - 1) * limit;
-      const { posts, total } = await this.postService.findAll({skip, limit});
+      const { posts, total } = await this.postService.findAll({ skip, limit });
+      return { posts, total };
+    } catch (error) {
+      Logger.error("Error fetching posts:", error);
+      throw new Error("Failed to fetch posts");
+    }
+  }
+
+  async getMy({ page, limit }: { page: number; limit: number }) {
+    const userId = await this.authController.getUserIdFromAuth();
+    if (!userId) {
+      throw new Error("Authentication required");
+    }
+    try {
+      const skip = (page - 1) * limit;
+      const { posts, total } = await this.postService.findByUserId({
+        userId,
+        skip,
+        limit,
+      });
       return { posts, total };
     } catch (error) {
       Logger.error("Error fetching posts:", error);

@@ -30,9 +30,11 @@ function Header() {
             Post a tweet
           </Link>
         )}
-        <Link href="/" className="hover:underline">
-          Trending
-        </Link>
+        {isAuthenticated && (
+          <Link href="/tweets/my" className="hover:underline">
+            My tweets
+          </Link>
+        )}
         {isAuthenticated ? (
           <Link href="/profile" className="hover:underline">
             My profile
@@ -60,9 +62,11 @@ function Header() {
               Post a tweet
             </Link>
           )}
-          <Link href="/" className="block hover:underline">
-            Trending
-          </Link>
+          {isAuthenticated && (
+            <Link href="/tweets/my" className="block hover:underline">
+              My tweets
+            </Link>
+          )}
           {isAuthenticated ? (
             <Link href="/profile" className="block hover:underline">
               My profile

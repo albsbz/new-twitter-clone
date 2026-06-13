@@ -4,7 +4,7 @@ import TweetsList from "@/app/components/TweetsList";
 
 async function Tweets({ page }: { page: number }) {
   await connection();
-  const { posts: pureTweets, total } = await postController.getAll({
+  const { posts: pureTweets, total } = await postController.getMy({
     page,
     limit: 12,
   });
