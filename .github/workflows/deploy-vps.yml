@@ -242,6 +242,17 @@ jobs:
             # --- Deploy ---
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
+            # One-time migration: remove containers that belong to a different compose project
+            for CONTAINER in nextjs_twitter_prod socket_server_prod; do
+              if docker inspect "$CONTAINER" >/dev/null 2>&1; then
+                PROJECT="$(docker inspect --format='{{index .Config.Labels "com.docker.compose.project"}}' "$CONTAINER" 2>/dev/null || true)"
+                if [ "$PROJECT" != "twitter-prod" ]; then
+                  echo "Migrating $CONTAINER from project '$PROJECT' to twitter-prod..."
+                  docker rm -f "$CONTAINER"
+                fi
+              fi
+            done
+
             COMPOSE="docker compose -f docker-compose.vps.yml --env-file .env.production --project-name twitter-prod"
 
             $COMPOSE pull nextjs-twitter
