@@ -14,6 +14,9 @@ function TweetCard({ tweet }: { tweet: PostEntityWithCommentsResponseDto }) {
       <article className="Card p-4 border rounded shadow">
         <h2 className="text-lg font-bold">{tweet.title}</h2>
         <p>{tweet.body}</p>
+        <p className="text-sm text-gray-500">
+          {tweet.authorName && `By ${tweet.authorName}`}
+        </p>
         <div className="tags flex items-center space-x-2 mt-2">
           {tweet.tags?.map((tag, index) => (
             <span
@@ -39,7 +42,7 @@ function TweetCard({ tweet }: { tweet: PostEntityWithCommentsResponseDto }) {
           </div>
         </div>
       </article>
-      <CommentsSection postId={tweet.id} comments={tweet.comments}/>
+      <CommentsSection postId={tweet.id} comments={tweet.comments} />
     </>
   );
 }

@@ -37,6 +37,19 @@ class AuthController extends BaseController<{}> {
     return userId;
   }
 
+  async getUserDataFromAuth() {
+    let userId;
+    let userName;
+    try {
+      const data = await this.checkAuth();
+      userId = data.id;
+      userName = data.name;
+    } catch (error) {
+      Logger.error("Error checking authentication:", error);
+    }
+    return { userId, userName };
+  }
+
   async checkAuth() {
     const { JWT_SECRET } = getServerEnv();
     const cookieStore = await cookies();
@@ -48,10 +61,10 @@ class AuthController extends BaseController<{}> {
     if (token) {
       const decoded = jwt.verify(token, JWT_SECRET) as {
         userId: string;
-        name?: string;
+        userName?: string;
       };
       if (decoded && decoded.userId) {
-        return { id: decoded.userId, name: decoded.name || null };
+        return { id: decoded.userId, name: decoded.userName || null };
       }
       throw new Error("Authentication required");
     }
@@ -308,9 +321,13 @@ class AuthController extends BaseController<{}> {
           });
         }
         const { JWT_SECRET } = getServerEnv();
-        const token = jwt.sign({ userId: existingUser.id }, JWT_SECRET, {
-          expiresIn: "1h",
-        });
+        const token = jwt.sign(
+          { userId: existingUser.id, userName: existingUser.name || null },
+          JWT_SECRET,
+          {
+            expiresIn: "1h",
+          },
+        );
         return this.formResponse({
           message: "Login successful",
           token,

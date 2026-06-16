@@ -10,6 +10,7 @@ export interface PostEntity {
     dislikes: number;
   };
   views: number;
+  authorName: string;
 
   author: mongoose.Types.ObjectId;
 }

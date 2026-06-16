@@ -31,6 +31,13 @@ function NewTweet() {
     } catch (err) {
       if (err instanceof ApiHttpError) {
         setResponseError(err.cause.error);
+        if (err.cause.status === 403) {
+          addNotification({
+            type: "error",
+            message: err.cause.message,
+          });
+          return;
+        }
       }
       addNotification({
         type: "error",

@@ -19,6 +19,14 @@ function TweetListItem({ tweet }: { tweet: PostEntityWithReactions }) {
       >
         <h2 className="text-lg font-bold">{tweet.title}</h2>
       </Link>
+      <Link
+        href={`/tweets/${tweet.id}`}
+        className="text-gray-700 mt-2 line-clamp-3 hover:line-clamp-none"
+      >
+        {tweet.authorName && (
+          <p className="text-sm text-gray-500 mb-1">By {tweet.authorName}</p>
+        )}
+      </Link>
       <div className="mt-2 flex text-sm text-gray-600 justify-between ">
         <div className="grow flex items-center">
           <LikeButton tweetId={tweet.id} type="like" />

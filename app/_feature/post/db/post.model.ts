@@ -18,6 +18,7 @@ const PostSchema = new Schema<PostEntity>(
       ref: "User",
       required: true,
     },
+    authorName: String,
   },
   { timestamps: true },
 );

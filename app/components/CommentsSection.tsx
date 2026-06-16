@@ -62,13 +62,17 @@ function CommentsSection({
     <section className="comments">
       <div className="commentsList">
         {commentsList.map((comment) => (
-          <div key={comment.id} className="comment">
+          <div key={comment.id} className="comment border-b py-2">
             <p>{comment.body}</p>
-            <span className="commentAuthor">- {comment.authorName}</span>
+            <span className="commentAuthor first-letter:capitalize text-sm text-gray-500">
+              {" "}
+              {comment.authorName}
+            </span>{" "}
+            <span className="commentDate text-sm text-gray-500">{` says at ${new Date(comment.createdAt).toLocaleString("en-DE")}`}</span>
           </div>
         ))}
       </div>
-      <div className="addComments">
+      <div className="addComments mt-4">
         <Form
           handleSubmit={handleSubmit}
           submitButtonText="Add comment"
@@ -78,7 +82,7 @@ function CommentsSection({
               name: "body",
               type: "textarea",
               placeholder: "Add comment",
-              title: "comment:",
+              title: "Add comment:",
             },
             {
               name: "postId",

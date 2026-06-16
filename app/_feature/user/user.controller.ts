@@ -53,6 +53,17 @@ class UserController extends BaseController<{}> {
       });
     } catch (error) {
       Logger.error("Error updating username:", error);
+
+      if (
+        error instanceof Error &&
+        (error as any).codeName === "DuplicateKey"
+      ) {
+        return this.formResponse({
+          message: "Username already taken",
+          error: "Username already taken",
+          status: 409,
+        });
+      }
       return this.formResponse({
         message: "Failed to update username",
         error: error instanceof Error ? error.message : "Unknown error",

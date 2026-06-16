@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const UserSchema = new Schema<UserEntity>({
   email: String,
   password: String,
-  name: String,
+  name: { type: String, unique: true },
   isVerified: Boolean,
   verificationEmailSendAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },

@@ -1,4 +1,5 @@
 export type CommentsResponseDto = {
+  createdAt: string | number | Date;
   id: string;
   body: string;
   postId: string;
@@ -13,4 +14,5 @@ export type CommentsCreateResponseDto = {
   authorId: string;
   authorName: string;
   postAuthorId: string;
+  createdAt: string;
 };
