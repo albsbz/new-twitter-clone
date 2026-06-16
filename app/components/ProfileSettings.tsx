@@ -7,9 +7,11 @@ import ApiService from "../_feature/api/ApiService";
 import { ApiHttpError } from "../_feature/api/ApiHttpError";
 import { useNotificationState } from "../lib/store";
 import z from "zod";
+import { useRouter } from "next/navigation";
 
 function ProfileSettings() {
   const { addNotification } = useNotificationState();
+  const router = useRouter();
   const handleSubmit = async (
     formData: FormData,
     setResponseError: React.Dispatch<
@@ -27,6 +29,7 @@ function ProfileSettings() {
         message: "Profile updated successfully!",
         type: "success",
       });
+      router.push("/");
     } catch (err) {
       if (err instanceof ApiHttpError) {
         const responseError = err.cause.error;

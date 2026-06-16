@@ -14,7 +14,9 @@ function Login() {
     return (
       <>
         {!showRegistrationForm && <LoginForm />}
-        {showRegistrationForm && <RegistrationForm />}
+        {showRegistrationForm && (
+          <RegistrationForm handleBack={() => setShowRegistrationForm(false)} />
+        )}
         <span
           className="flex justify-center my-4 cursor-pointer text-blue-500"
           onClick={() => setShowRegistrationForm(!showRegistrationForm)}
