@@ -4,7 +4,7 @@ import useAuth from "../_hooks/useAuth";
 import ProfileSettings from "./ProfileSettings";
 
 function Profile() {
-  const {  name } = useUserState();
+  const { name } = useUserState();
   const { handleLogout } = useAuth();
   const logOutHandler = () => {
     handleLogout();
@@ -27,7 +27,7 @@ function Profile() {
         <ProfileSettings />
       )}
       <button
-        className="ml-4 px-4 py-2 bg-red-500 text-white rounded"
+        className="ml-4 mt-4 px-4 py-2 bg-red-500 text-white rounded"
         onClick={logOutHandler}
       >
         Logout

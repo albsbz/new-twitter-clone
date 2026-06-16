@@ -7,7 +7,7 @@ import Logger from "../_utils/logger";
 import z from "zod";
 import { useRouter } from "next/navigation";
 
-function RegistrationForm() {
+function RegistrationForm({ handleBack }: { handleBack: () => void }) {
   const { addNotification } = useNotificationState();
   const router = useRouter();
   const handleSubmit = async (
@@ -24,7 +24,7 @@ function RegistrationForm() {
         formData,
       });
       addNotification({ message: "Registration successful!", type: "success" });
-      router.push("/login");
+      handleBack();
     } catch (err) {
       if (err instanceof ApiHttpError) {
         const responseError = err.cause.error;

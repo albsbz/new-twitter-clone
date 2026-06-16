@@ -30,7 +30,14 @@ function LoginForm() {
       Logger.log("Login successful, response data:", data);
       if (data?.id) {
         logIn({ name: data?.name || null, id: data?.id });
-        router.push("/");
+        if (data.name) {
+          router.push("/");
+        }
+        router.push("/profile");
+        addNotification({
+          message: "Please complete your profile to continue",
+          type: "info",
+        });
         return;
       }
       Logger.error("Login response missing token:", data);
