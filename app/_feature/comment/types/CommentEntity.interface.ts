@@ -5,6 +5,7 @@ export interface CommentEntity {
   body: string;
   postId: mongoose.Types.ObjectId;
   authorId: mongoose.Types.ObjectId;
+  createdAt: string;
 }
 
 export interface AuthorPopulated {
