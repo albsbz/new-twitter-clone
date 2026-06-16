@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useUserState } from "@/app/lib/store";
 import useAuth from "../_hooks/useAuth";
+import { useRef } from "react";
+import useClickOutside from "../_hooks/useClickOutside";
 
 function Header() {
   const { handleLogin } = useAuth();
@@ -11,10 +13,16 @@ function Header() {
   useEffect(() => {
     handleLogin({ notification: false });
   }, []);
-
+  const wrapperRef = useRef<HTMLElement>(null);
+  useClickOutside(wrapperRef, () => {
+    setIsMenuOpen(false);
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
-    <header className="flex items-center justify-between p-4 bg-gray-800 text-white">
+    <header
+      className="flex items-center justify-between p-4 bg-gray-800 text-white"
+      ref={wrapperRef}
+    >
       <Link href="/" className="text-xl font-bold flex-grow-2">
         <h1>Let's tweet</h1>
       </Link>
@@ -50,7 +58,7 @@ function Header() {
         onClick={() => setIsMenuOpen(!isMenuOpen)}
       />
       {isMenuOpen && (
-        <nav className="sm:hidden absolute top-16 right-4 bg-gray-800 p-4 rounded shadow-lg">
+        <nav className="sm:hidden absolute top-16 right-4 bg-gray-800 p-4 rounded shadow-lg z-10">
           <Link href="/" className="block hover:underline">
             Home
           </Link>

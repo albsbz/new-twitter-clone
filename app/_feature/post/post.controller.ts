@@ -114,7 +114,8 @@ class PostController extends BaseController<PostEntity> {
   }
 
   async create(formData: CreatePostDto) {
-    const userId = await this.authController.getUserIdFromAuth();
+    const { userId, userName } =
+      await this.authController.getUserDataFromAuth();
     const { success, data, error } = this.validate<CreatePostDto>({
       data: formData,
       schema: Post,
@@ -134,6 +135,12 @@ class PostController extends BaseController<PostEntity> {
         status: 401,
       });
     }
+    if (!userName) {
+      return this.formResponse({
+        message: "User must set a username in Profile to create a post",
+        status: 403,
+      });
+    }
     try {
       const newPost = await this.postService.create({
         ...data,
@@ -145,6 +152,7 @@ class PostController extends BaseController<PostEntity> {
         reactions: { likes: 0, dislikes: 0 },
         views: 0,
         userId: userId.toString(),
+        authorName: userName,
       });
 
       return this.formResponse({

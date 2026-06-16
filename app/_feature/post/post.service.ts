@@ -29,6 +29,7 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
                 title: "$$post.title",
                 body: "$$post.body",
                 author: { $toString: "$$post.author" },
+                authorName: "$$post.authorName",
                 reactions: "$$post.reactions",
                 views: "$$post.views",
                 createdAt: "$$post.createdAt",
@@ -95,6 +96,7 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
                 title: "$$post.title",
                 body: "$$post.body",
                 author: { $toString: "$$post.author" },
+                authorName: "$$post.authorName",
                 reactions: "$$post.reactions",
                 views: "$$post.views",
                 createdAt: "$$post.createdAt",
@@ -133,6 +135,9 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
       return null;
     }
 
+    await Post.findByIdAndUpdate(id, {
+      $inc: { views: 1 },
+    });
     const [post] = await Post.aggregate([
       {
         $match: {
@@ -146,6 +151,7 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
           title: 1,
           body: 1,
           author: { $toString: "$author" },
+          authorName: 1,
           reactions: 1,
           views: 1,
           createdAt: { $toString: "$createdAt" },
@@ -174,6 +180,7 @@ class PostService extends BaseService<PostResponseDto, AllPostsResponseDto> {
     const post = new Post({
       ...data,
       author: new mongoose.Types.ObjectId(data.userId),
+      authorName: data.authorName,
     });
 
     const res = await post.save();
