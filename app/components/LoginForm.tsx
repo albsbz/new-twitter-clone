@@ -32,6 +32,7 @@ function LoginForm() {
         logIn({ name: data?.name || null, id: data?.id });
         if (data.name) {
           router.push("/");
+          return;
         }
         router.push("/profile");
         addNotification({
