@@ -9,6 +9,7 @@ function useAuth() {
     useNotificationState();
   const { logIn, logOut } = useUserState();
   const router = useRouter();
+
   const handleLogin = async ({ notification = true } = {}) => {
     try {
       const { data, message, error, status, success } = await ApiService.post({
@@ -20,9 +21,7 @@ function useAuth() {
         Logger.log("Login successful, response data:", data);
         if (data?.id) {
           logIn({ name: data?.name || null, id: data?.id });
-          if (!socket.connected) {
-            socket.connect();
-          }
+          // subscribeSocketNotifications handles connect + listener registration
           subscribeSocketNotifications(data.id);
           if (notification) {
             addNotification({ message: "Login successful!", type: "success" });

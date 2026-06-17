@@ -4,9 +4,12 @@ if (!url) {
   throw new Error("NEXT_PUBLIC_SOCKET_URL is not defined");
 }
 
+// autoConnect: false — socket connects only after login when the JWT cookie exists.
+// Connecting before login causes an Unauthorized rejection and the socket stays
+// disconnected even after the cookie is set.
 const socket = io(url, {
   withCredentials: true,
-  autoConnect: true,
+  autoConnect: false,
   reconnection: true,
   transports: ["websocket"],
 });
