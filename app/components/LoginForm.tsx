@@ -9,7 +9,7 @@ import z from "zod";
 import { useRouter } from "next/navigation";
 
 function LoginForm() {
-  const { addNotification } = useNotificationState();
+  const { addNotification, subscribeSocketNotifications } = useNotificationState();
   const { logIn } = useUserState();
   const router = useRouter();
   const handleSubmit = async (
@@ -30,6 +30,7 @@ function LoginForm() {
       Logger.log("Login successful, response data:", data);
       if (data?.id) {
         logIn({ name: data?.name || null, id: data?.id });
+        subscribeSocketNotifications(data.id);
         if (data.name) {
           router.push("/");
           return;
