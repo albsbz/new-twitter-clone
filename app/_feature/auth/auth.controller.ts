@@ -17,13 +17,22 @@ import UpdatePasswordSchema, {
 import ResetPasswordSchema, {
   ResetPasswordDto,
 } from "./types/ResetPasswordDto";
+import RefreshTokenService from "./refreshToken.service";
 
 class AuthController extends BaseController<{}> {
   private userService: UserService;
+  private refreshTokenService: RefreshTokenService;
 
-  constructor({ userService }: { userService: UserService }) {
+  constructor({
+    userService,
+    refreshTokenService,
+  }: {
+    userService: UserService;
+    refreshTokenService: RefreshTokenService;
+  }) {
     super();
     this.userService = userService;
+    this.refreshTokenService = refreshTokenService;
   }
 
   async getUserIdFromAuth() {
@@ -292,6 +301,64 @@ class AuthController extends BaseController<{}> {
     }
   }
 
+  async refreshToken() {
+    const { JWT_SECRET } = getServerEnv();
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get("refreshToken");
+    if (!cookie) {
+      return this.formResponse({
+        message: "No refresh token found",
+        status: 401,
+      });
+    }
+    const { value: refreshToken } = cookie;
+    try {
+      const decoded = jwt.verify(refreshToken, JWT_SECRET) as {
+        userId: string;
+        userName?: string;
+      };
+      if (!decoded || !decoded.userId) {
+        return this.formResponse({
+          message: "Invalid refresh token",
+          status: 400,
+        });
+      }
+      let userName = decoded.userName || null;
+      if (!decoded.userName) {
+        const user = await this.userService.findById(decoded.userId);
+        if (user.name) {
+          userName = user.name;
+        }
+      }
+      const newToken = jwt.sign(
+        { userId: decoded.userId, userName: userName },
+        JWT_SECRET,
+        {
+          expiresIn: "1h",
+        },
+      );
+      return this.formResponse({
+        message: "Token refreshed successfully",
+        token: newToken,
+        status: 200,
+      });
+    } catch (error) {
+      Logger.error("Error refreshing token:", error);
+      if (error instanceof jwt.TokenExpiredError) {
+        await this.refreshTokenService.deleteByToken(refreshToken);
+        return this.formResponse({
+          message: "Refresh token expired",
+          status: 401,
+        });
+      }
+      return this.formResponse({
+        message: "Failed to refresh token",
+        error: error instanceof Error ? error.message : "Unknown error",
+        status: 500,
+      });
+    }
+  }
+
   async login(formData: RegistrationDto) {
     const { success, data, error } = User.safeParse(formData);
     Logger.log("Parsed data:", { success, data, error });
@@ -328,9 +395,21 @@ class AuthController extends BaseController<{}> {
             expiresIn: "1h",
           },
         );
+        const refreshToken = jwt.sign(
+          { userId: existingUser.id, userName: existingUser.name || null },
+          JWT_SECRET,
+          {
+            expiresIn: "7d",
+          },
+        );
+        await this.refreshTokenService.findByUserAndUpdate(existingUser.id, {
+          token: refreshToken,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        });
         return this.formResponse({
           message: "Login successful",
           token,
+          refreshToken,
           data: { id: existingUser.id, name: existingUser.name || null },
           status: 200,
         });

@@ -10,6 +10,31 @@ function useAuth() {
   const { logIn, logOut } = useUserState();
   const router = useRouter();
 
+  const loginSteps = async ({
+    notification = true,
+    data = { name: null, id: null },
+  }) => {
+    Logger.log("Login successful, response data:", data);
+    if (data?.id) {
+      logIn({ name: data?.name || null, id: data?.id });
+      // subscribeSocketNotifications handles connect + listener registration
+      subscribeSocketNotifications(data.id);
+      if (notification) {
+        addNotification({ message: "Login successful!", type: "success" });
+      }
+      return;
+    } else {
+      Logger.error("Login response missing token:", data);
+      if (notification) {
+        addNotification({
+          message: "Login failed: Missing token in response",
+          type: "error",
+        });
+      }
+      return;
+    }
+  };
+
   const handleLogin = async ({ notification = true } = {}) => {
     try {
       const { data, message, error, status, success } = await ApiService.post({
@@ -18,25 +43,7 @@ function useAuth() {
       });
 
       if (success) {
-        Logger.log("Login successful, response data:", data);
-        if (data?.id) {
-          logIn({ name: data?.name || null, id: data?.id });
-          // subscribeSocketNotifications handles connect + listener registration
-          subscribeSocketNotifications(data.id);
-          if (notification) {
-            addNotification({ message: "Login successful!", type: "success" });
-          }
-          return;
-        } else {
-          Logger.error("Login response missing token:", data);
-          if (notification) {
-            addNotification({
-              message: "Login failed: Missing token in response",
-              type: "error",
-            });
-          }
-          return;
-        }
+        await loginSteps({ notification, data });
       }
       if (status === 401) {
         Logger.log("Unauthorized error during login:", message);
