@@ -8,25 +8,28 @@ abstract class BaseController<T> {
     data,
     status,
     token,
+    refreshToken,
   }: {
     message: string;
     error?: FormValidationError<T> | TError;
     data?: T;
     status: number;
     token?: string;
+    refreshToken?: string;
   }): {
     response: ResponseContent<T, FormValidationError<T> | TError>;
     token?: string;
+    refreshToken?: string;
   } {
     if (error) {
       return {
         response: [{ message, error }, status],
-        token: token,
       };
     }
     return {
       response: [{ message, data }, status],
       token: token,
+      refreshToken: refreshToken,
     };
   }
 

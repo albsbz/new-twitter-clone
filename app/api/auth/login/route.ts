@@ -8,16 +8,27 @@ export async function POST(
   ctx: RouteContext<"/api/auth/login">,
 ) {
   const formData = Object.fromEntries(await req.formData()) as RegistrationDto;
-  const { response, token } = await authController.login(formData);
+  const { response, token, refreshToken } =
+    await authController.login(formData);
   const [responseData, status] = response;
-  let init = { status };
+
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieStore = await cookies();
+  console.log("refreshToken in response:", refreshToken);
   if (token) {
-    const isProduction = process.env.NODE_ENV === "production";
-    const cookieStore = await cookies();
     cookieStore.set("token", token, {
       httpOnly: true,
       path: "/",
-      maxAge: 3600,
+      maxAge: 900,
+      sameSite: "strict",
+      secure: isProduction,
+    });
+  }
+  if (refreshToken) {
+    cookieStore.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      path: "/api/auth/refresh",
+      maxAge: 604800,
       sameSite: "strict",
       secure: isProduction,
     });

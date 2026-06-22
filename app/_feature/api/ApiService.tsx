@@ -99,6 +99,29 @@ class ApiService {
     });
   }
 
+  private async getRefreshToken() {
+    const refreshResponse = await this.post({
+      endpoint: "auth/refresh",
+      api: true,
+    });
+    return refreshResponse;
+  }
+
+  private async refeshTokenAndRetry(retryCallback: () => Promise<any>) {
+    Logger.log("Unauthorized error received, attempting token refresh...");
+    const refreshResponse = await this.getRefreshToken();
+    if (!refreshResponse?.success) {
+      Logger.error(
+        "Token refresh failed, redirecting to login:",
+        refreshResponse,
+      );
+      window.location.href = "/login";
+      return;
+    }
+    Logger.log("Token refresh successful, retrying original request...");
+    return await retryCallback();
+  }
+
   async get({
     endpoint,
     api = false,
@@ -113,7 +136,13 @@ class ApiService {
       let init = { ...this.init, method: "GET" };
       const response = await fetch(url, api ? init : undefined);
       if (!response.ok) {
-        await this.throwApiHttpError(response, "GET");
+        if (response.status === 401 && api && endpoint !== "auth/refresh") {
+          await this.refeshTokenAndRetry(async () =>
+            this.get({ endpoint, api, basicUrl }),
+          );
+        } else {
+          await this.throwApiHttpError(response, "GET");
+        }
       }
       return await response.json();
     } catch (error) {
@@ -164,7 +193,13 @@ class ApiService {
     try {
       const response = await fetch(url, init);
       if (!response.ok) {
-        await this.throwApiHttpError(response, "POST");
+        if (response.status === 401 && api && endpoint !== "auth/refresh") {
+          await this.refeshTokenAndRetry(async () =>
+            this.post({ params, body, formData, endpoint, api, basicUrl }),
+          );
+        } else {
+          await this.throwApiHttpError(response, "POST");
+        }
       }
       const { data, ...rest } = await response.json();
       return {
@@ -221,7 +256,13 @@ class ApiService {
     try {
       const response = await fetch(url, init);
       if (!response.ok) {
-        await this.throwApiHttpError(response, "PATCH");
+        if (response.status === 401 && api && endpoint !== "auth/refresh") {
+          await this.refeshTokenAndRetry(() =>
+            this.patch({ params, body, formData, endpoint, api, basicUrl }),
+          );
+        } else {
+          await this.throwApiHttpError(response, "PATCH");
+        }
       }
       const { data, ...rest } = await response.json();
       return {

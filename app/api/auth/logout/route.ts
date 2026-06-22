@@ -12,6 +12,7 @@ export async function POST(
   let init = { status };
 
   cookieStore.delete("token");
+  cookieStore.delete({ name: "refreshToken", path: "/api/auth/refresh" });
 
   const nextResponse = new NextResponse(JSON.stringify(responseData), init);
   return nextResponse;

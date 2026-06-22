@@ -25,6 +25,10 @@ function ProfileSettings() {
         api: true,
         formData: formData,
       });
+      await ApiService.post({
+        endpoint: "auth/refresh",
+        api: true,
+      });
       addNotification({
         message: "Profile updated successfully!",
         type: "success",
